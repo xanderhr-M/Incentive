@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>建達國際 — 績效獎金系統（主管入口）</title>
+<style>
+:root{
+  --R:#C0111A;--RD:#8B0000;--RL:#FFF4F4;--RP:#FDEAEA;--RB:#F2BCBC;--RT:#7A1A1A;
+  --G:#F5F3F0;--G2:#ECEAE6;--G3:#E0DBD5;--W:#fff;
+  --T:#1A1A1A;--M:#888;--LT:#BBB;
+  --r:10px;--rlg:14px;--rsm:7px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;background:var(--G);color:var(--T);font-size:14px;line-height:1.6;min-height:100vh}
+.page{display:none;flex-direction:column;min-height:100vh}
+.page.active{display:flex}
+.content{flex:1;padding:1.25rem;max-width:1100px;width:100%;margin:0 auto}
+
+/* Header */
+.hdr{background:var(--R);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-ico{width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.brand-co{font-size:10px;color:rgba(255,255,255,.72);letter-spacing:.08em}
+.brand-ttl{font-size:14px;font-weight:500;color:#fff}
+.hdr-btns{display:flex;gap:7px;align-items:center}
+.hbtn{background:rgba(255,255,255,.18);border:none;border-radius:7px;color:#fff;padding:6px 11px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;font-family:inherit}
+.hbtn:hover{background:rgba(255,255,255,.3)}
+.avtr{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-weight:600;color:#fff;font-size:13px}
+
+/* Login */
+.lhero{background:var(--R);padding:28px 0 52px;text-align:center}
+.lring{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.lco{font-size:11px;color:rgba(255,255,255,.72);letter-spacing:.1em;margin-bottom:5px}
+.lttl{color:#fff;font-size:19px;font-weight:500}
+.lsub{color:rgba(255,255,255,.85);font-size:12px;margin-top:4px}
+.lcardwrap{display:flex;justify-content:center;padding:0 1rem 1.5rem;margin-top:-26px}
+.lcard{background:#fff;border-radius:16px;border:.5px solid var(--RB);padding:1.5rem;width:100%;max-width:370px;box-shadow:0 2px 20px rgba(192,17,26,.1)}
+
+/* Inputs */
+input,select,textarea{border:1px solid var(--G3);border-radius:var(--rsm);padding:7px 11px;font-size:13px;font-family:inherit;color:var(--T);width:100%;background:#fff;outline:none;transition:border .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--R);box-shadow:0 0 0 3px rgba(192,17,26,.1)}
+label{font-size:12px;color:var(--M);display:block;margin-bottom:4px}
+textarea{resize:vertical;min-height:70px;font-family:inherit}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--rsm);border:1px solid var(--G3);background:#fff;cursor:pointer;font-size:13px;font-family:inherit;color:var(--T)}
+.btn:hover{background:var(--G2)}
+.btn-r{background:var(--R);color:#fff;border-color:var(--R)}
+.btn-r:hover{background:var(--RD);border-color:var(--RD)}
+.btn-sm{padding:4px 9px;font-size:12px}
+
+/* Cards */
+.card{background:#fff;border:.5px solid var(--G3);border-radius:var(--rlg);overflow:hidden}
+
+/* Stats */
+.sgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem}
+.sgrid4{grid-template-columns:repeat(4,1fr)}
+.stat{background:var(--G2);border-radius:var(--r);padding:12px 14px;border:.5px solid var(--G3)}
+.stat.acc{background:var(--R);border-color:var(--R)}
+.slbl{font-size:11px;color:var(--M);margin-bottom:5px}
+.stat.acc .slbl{color:rgba(255,255,255,.75)}
+.sval{font-size:24px;font-weight:500}
+.stat.acc .sval{color:#fff}
+
+/* Badges */
+.bge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.b-r{background:var(--RP);color:var(--RT)}
+.b-g{background:#EAF3DE;color:#27500A}
+.b-a{background:#FAEEDA;color:#633806}
+.b-b{background:#E6F0FB;color:#0C447C}
+.b-gr{background:var(--G2);color:#555}
+
+/* Table */
+.twrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
+th{padding:8px 10px;text-align:center;font-weight:500;font-size:11px;background:var(--RL);color:var(--RT);border-bottom:.5px solid var(--RB)}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{background:var(--RP)}
+.sort-ind{display:inline-block;width:12px;color:var(--LT);font-size:10px;margin-left:2px}
+.sort-ind.active{color:var(--R);font-weight:700}
+td{padding:8px 10px;border-top:.5px solid var(--G3);vertical-align:middle;text-align:center}
+td.actions{display:flex;gap:5px;justify-content:center}
+tr:nth-child(even) td{background:#FFF8F8}
+
+/* Modals */
+.mover{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem;overflow-y:auto}
+.modal{background:#fff;border-radius:var(--rlg);padding:1.5rem;width:100%;border:.5px solid var(--RB);box-shadow:0 2px 20px rgba(192,17,26,.1);margin:auto}
+.msm{max-width:420px}.mlg{max-width:760px}
+.mttl{font-size:15px;font-weight:500;color:var(--RD);margin-bottom:1rem}
+.frow{margin-bottom:.9rem}
+.mft{display:flex;gap:8px;margin-top:1.25rem}
+.mft .btn{flex:1;justify-content:center}
+.hlstrip{background:var(--RL);border-left:3px solid var(--R);border-radius:0 8px 8px 0;padding:9px 13px;margin-bottom:1.1rem}
+
+/* Toast */
+.toast{position:fixed;top:18px;right:18px;background:var(--RD);color:#fff;padding:9px 16px;border-radius:9px;font-size:13px;font-weight:500;z-index:2000;opacity:0;transform:translateY(-8px);transition:all .25s;pointer-events:none}
+.toast.on{opacity:1;transform:translateY(0)}
+
+/* Filters */
+.filters{display:flex;gap:7px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.filters input,.filters select{width:auto;flex:1;min-width:100px}
+
+/* Spinner */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:28px;height:28px;border:3px solid var(--RB);border-top-color:var(--R);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 8px}
+
+/* KPI eval rows */
+.kpi-row{border:.5px solid var(--G3);border-radius:var(--r);padding:12px 14px;margin-bottom:9px;background:var(--G)}
+.kpi-row.editable{background:var(--RL);border-color:var(--RB)}
+.kpi-row-hd{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.kpi-row-name{font-weight:600;font-size:17px}
+.kpi-idx{font-size:12px;color:var(--M);font-weight:500;margin-right:6px}
+.kpi-row-meta{display:flex;gap:6px;flex-wrap:wrap}
+.kpi-row-body{display:flex;align-items:end;gap:10px;flex-wrap:wrap}
+.kpi-score-box{width:110px}
+.kpi-weighted{font-size:13px;color:var(--RD);font-weight:600;padding-bottom:8px}
+.readonly-val{font-size:16px;font-weight:600;padding:6px 0}
+.summary-box{background:var(--RL);border:.5px solid var(--RB);border-radius:var(--r);padding:14px 16px;margin-top:14px}
+.summary-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px}
+.summary-row.total{font-size:17px;font-weight:600;padding-top:6px}
+.summary-row.total .score-big{font-size:39px;font-weight:700;color:var(--R);line-height:1}
+.summary-row.big{font-size:16px;font-weight:700;color:var(--R);padding-top:8px;margin-top:6px;border-top:.5px dashed var(--RB)}
+
+@media(max-width:640px){
+  .sgrid3{grid-template-columns:repeat(2,1fr)}
+  .kpi-row-body{flex-direction:column;align-items:stretch}
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ════ LOGIN ════ -->
+<div class="page active" id="pg-login">
+  <div class="lhero">
+    <div class="lring">
+      <svg width="26" height="26" viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 3v18h18"/><path d="M18.7 8 12 14.7 8.7 11.4 3.7 16.4"/>
+      </svg>
+    </div>
+    <p class="lco">建達國際股份有限公司</p>
+    <h1 class="lttl">績效獎金系統</h1>
+    <p class="lsub">主管評核入口</p>
+  </div>
+  <div class="lcardwrap">
+    <div class="lcard">
+      <div class="frow"><label>工號</label><input id="lid" placeholder="如：X01037" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="frow" style="position:relative">
+        <label>密碼</label>
+        <input type="password" id="lpw" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:40px">
+        <button onclick="toggleEye(this,'lpw')" style="position:absolute;right:6px;bottom:6px;background:none;border:none;cursor:pointer;color:var(--M);padding:3px">👁</button>
+      </div>
+      <div id="lerr" style="display:none;background:var(--RP);color:var(--RD);font-size:12px;padding:8px 11px;border-radius:7px;margin-bottom:.9rem;border:.5px solid var(--RB)"></div>
+      <button class="btn btn-r" style="width:100%;justify-content:center;padding:10px;font-size:14px" onclick="doLogin()">登入</button>
+      <p style="font-size:11px;color:var(--M);text-align:center;margin-top:10px">預設密碼為工號，首次登入後請修改</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════ 主管入口 ════ -->
+<div class="page" id="pg-manager">
+  <div class="hdr">
+    <div class="brand">
+      <div class="brand-ico">建</div>
+      <div><div class="brand-co">建達國際股份有限公司</div><div class="brand-ttl">主管評核入口</div></div>
+    </div>
+    <div class="hdr-btns">
+      <div style="display:flex;align-items:center;gap:8px;margin-right:4px">
+        <div class="avtr" id="mavtr"></div>
+        <div>
+          <div id="mname" style="font-size:12px;color:#fff;font-weight:500;line-height:1.2"></div>
+          <div id="mscope" style="font-size:10px;color:rgba(255,255,255,.7);line-height:1.2"></div>
+        </div>
+      </div>
+      <button class="hbtn" onclick="openPw()">修改密碼</button>
+      <button class="hbtn" onclick="logout()">登出</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="sgrid3 sgrid4" style="margin-bottom:1.1rem">
+      <div class="stat"><div class="slbl">獎金計算季度</div><div class="sval" id="m-quarter" style="font-size:19px">—</div></div>
+      <div class="stat acc"><div class="slbl">責任部門人數</div><div class="sval" id="m-tot">0</div></div>
+      <div class="stat"><div class="slbl">已完成評分</div><div class="sval" id="m-done">0</div></div>
+      <div class="stat"><div class="slbl">待評分</div><div class="sval" id="m-pend">0</div></div>
+    </div>
+    <div class="filters">
+      <input id="mf-q" placeholder="搜尋工號或姓名..." oninput="renderManagerList()">
+      <select id="mf-s" onchange="renderManagerList()"><option>全部狀態</option><option>已完成</option><option>待評分</option></select>
+    </div>
+    <div class="card">
+      <div class="twrap">
+        <table>
+          <thead><tr>
+            <th class="sortable" onclick="sortManagerList('bu')">事業部<span class="sort-ind" data-col="bu">⇅</span></th>
+            <th class="sortable" onclick="sortManagerList('dept')">部門<span class="sort-ind" data-col="dept">⇅</span></th>
+            <th class="sortable" onclick="sortManagerList('job')">職類<span class="sort-ind" data-col="job">⇅</span></th>
+            <th class="sortable" onclick="sortManagerList('id')">工號<span class="sort-ind" data-col="id">⇅</span></th>
+            <th class="sortable" onclick="sortManagerList('name')">姓名<span class="sort-ind" data-col="name">⇅</span></th>
+            <th class="sortable" onclick="sortManagerList('progress')">評分進度<span class="sort-ind" data-col="progress">⇅</span></th>
+            <th class="sortable" onclick="sortManagerList('total')">績效總分<span class="sort-ind" data-col="total">⇅</span></th>
+            <th class="sortable" onclick="sortManagerList('bonus')">績效獎金預估<span class="sort-ind" data-col="bonus">⇅</span></th>
+            <th></th>
+          </tr></thead>
+          <tbody id="manager-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODALS ════ -->
+<div class="mover" id="m-pw" style="display:none" onclick="if(event.target===this)closeM('m-pw')">
+  <div class="modal msm">
+    <div class="mttl">修改密碼</div>
+    <div class="frow"><label>目前密碼</label><input type="password" id="pw-cur"></div>
+    <div class="frow"><label>新密碼（至少4位）</label><input type="password" id="pw-new"></div>
+    <div class="frow"><label>確認新密碼</label><input type="password" id="pw-cf"></div>
+    <div id="pw-err" style="display:none;color:var(--R);font-size:12px;margin-bottom:.75rem;padding:7px 11px;background:var(--RP);border-radius:7px"></div>
+    <div class="mft">
+      <button class="btn" onclick="closeM('m-pw')">取消</button>
+      <button class="btn btn-r" onclick="doChangePw()">確認修改</button>
+    </div>
+  </div>
+</div>
+
+<!-- 主管評分彈窗 -->
+<div class="mover" id="m-eval" style="display:none" onclick="if(event.target===this)closeM('m-eval')">
+  <div class="modal mlg">
+    <div class="mttl">績效評核</div>
+    <div class="hlstrip">
+      <div id="ev-name" style="font-weight:600;color:var(--RD);font-size:20px"></div>
+      <div id="ev-meta" style="font-size:12px;color:var(--M);margin-top:2px"></div>
+    </div>
+    <div id="ev-kpis"></div>
+    <div class="summary-box">
+      <div class="summary-row total"><span>績效總分</span><span id="ev-total" class="score-big">0</span></div>
+      <div class="summary-row big"><span>績效獎金預估 <span style="font-size:11px;font-weight:400;color:var(--M)">（尚未扣除相關扣款）</span></span><span id="ev-bonus">NT$ 0</span></div>
+    </div>
+    <div class="frow" style="margin-top:1rem"><label>主管總評</label><textarea id="ev-comment" placeholder="請填寫整體評語"></textarea></div>
+    <div id="ev-err" style="display:none;color:var(--R);font-size:12px;margin-bottom:.5rem;padding:7px 11px;background:var(--RP);border-radius:7px"></div>
+    <div class="mft">
+      <button class="btn" onclick="closeM('m-eval')">取消</button>
+      <button class="btn btn-r" onclick="saveEvaluation()">儲存評分</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:3000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;padding:18px 26px;text-align:center;min-width:130px">
+    <div class="spinner"></div>
+    <p id="load-msg" style="font-size:13px;color:var(--RD);font-weight:500"></p>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+//  設定：填入 Apps Script 部署網址（與管理者後台頁面共用同一個 GAS 網址）
+// ════════════════════════════════════════════════════
+const GAS = 'https://script.google.com/macros/s/AKfycbyIX5Qn3wID4uMuDjOdmegvdJStBYmOJLIPQ_wmuQAeN5giVHrCI-CZzqnmGNGCSOqI8g/exec';
+const ROLE = 'manager';
+
+// ════════════════════════════════════════════════════
+//  API
+// ════════════════════════════════════════════════════
+async function GET(params) {
+  const url = GAS + '?' + new URLSearchParams(params);
+  const raw = await fetch(url, { mode: 'cors' });
+  if (!raw.ok) throw new Error('HTTP ' + raw.status + ' ' + raw.statusText);
+  return JSON.parse(await raw.text());
+}
+async function POST(body) {
+  const raw = await fetch(GAS, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) });
+  if (!raw.ok) throw new Error('HTTP ' + raw.status + ' ' + raw.statusText);
+  return JSON.parse(await raw.text());
+}
+
+// ════════════════════════════════════════════════════
+//  狀態 / 工具
+// ════════════════════════════════════════════════════
+let CU = null;          // currentUser
+let STAFF_LIST = [];    // 責任部門員工
+let EDIT_STAFF = null;  // 目前評分視窗的員工物件
+
+function pg(id) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('pg-' + id).classList.add('active'); }
+function openM(id) { document.getElementById(id).style.display = 'flex'; }
+function closeM(id) { document.getElementById(id).style.display = 'none'; }
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2800); }
+function load(show, msg = '載入中...') {
+  const el = document.getElementById('loading');
+  el.style.display = show ? 'flex' : 'none';
+  if (show) document.getElementById('load-msg').textContent = msg;
+}
+function d(v) { return (v === '' || v === null || v === undefined) ? '<span style="color:var(--LT)">—</span>' : v; }
+function toggleEye(btn, inp) { const i = document.getElementById(inp); i.type = i.type === 'text' ? 'password' : 'text'; }
+function money(v) { return 'NT$ ' + Number(v || 0).toLocaleString(); }
+
+// ════════════════════════════════════════════════════
+//  登入
+// ════════════════════════════════════════════════════
+async function doLogin() {
+  const id = document.getElementById('lid').value.trim();
+  const pw = document.getElementById('lpw').value;
+  if (!id || !pw) { showErr('請輸入帳號與密碼'); return; }
+  if (!GAS) { showErr('尚未設定 GAS 後端網址，請聯絡系統管理員完成部署設定'); return; }
+  load(true, '驗證中...');
+  let res;
+  try { res = await GET({ action: 'login', id, pw, role: ROLE }); }
+  catch (e) { load(false); showErr('網路錯誤：' + e.message); return; }
+  load(false);
+  if (!res.ok) { showErr(res.err || '登入失敗'); return; }
+  document.getElementById('lerr').style.display = 'none';
+  CU = res.user;
+  await initManager();
+  pg('manager');
+}
+function showErr(msg) { const e = document.getElementById('lerr'); e.textContent = msg; e.style.display = 'block'; }
+function logout() { CU = null; STAFF_LIST = []; pg('login'); }
+
+// ════════════════════════════════════════════════════
+//  修改密碼
+// ════════════════════════════════════════════════════
+function openPw() { ['pw-cur', 'pw-new', 'pw-cf'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pw-err').style.display = 'none'; openM('m-pw'); }
+async function doChangePw() {
+  const cur = document.getElementById('pw-cur').value;
+  const nw = document.getElementById('pw-new').value;
+  const cf = document.getElementById('pw-cf').value;
+  const err = document.getElementById('pw-err');
+  if (nw.length < 4) { err.textContent = '新密碼至少需4個字元'; err.style.display = 'block'; return; }
+  if (nw !== cf) { err.textContent = '兩次輸入不一致'; err.style.display = 'block'; return; }
+  load(true, '更新密碼中...');
+  const res = await POST({ action: 'changePw', id: CU.id, cur, nw, role: ROLE });
+  load(false);
+  if (!res.ok) { err.textContent = res.err || '更新失敗'; err.style.display = 'block'; return; }
+  closeM('m-pw'); toast('密碼已更新');
+}
+
+// ════════════════════════════════════════════════════
+//  主管入口
+// ════════════════════════════════════════════════════
+async function initManager() {
+  document.getElementById('mavtr').textContent = CU.name[0];
+  document.getElementById('mname').textContent = CU.name;
+  document.getElementById('mscope').textContent = '責任部門：' + CU.scope;
+  load(true, '載入員工資料...');
+  let res, qt;
+  try {
+    [res, qt] = await Promise.all([
+      GET({ action: 'getManagerStaff', managerId: CU.id }),
+      GET({ action: 'getQuarterSetting' }),
+    ]);
+  } catch (e) { load(false); toast('網路錯誤：' + e.message); return; }
+  load(false);
+  if (res.ok) STAFF_LIST = res.data; else toast('載入失敗：' + (res.err || ''));
+  const quarterEl = document.getElementById('m-quarter');
+  if (quarterEl) quarterEl.textContent = (qt.ok && qt.data.year && qt.data.quarter) ? `${qt.data.year} 年第 ${qt.data.quarter} 季` : '尚未設定';
+  renderManagerList();
+}
+function staffIsDone(o) { return o.kpis.every(k => !k.name || (k.score !== '' && k.score !== null)); }
+let MGR_SORT = { col: null, dir: 1 };
+function sortManagerList(col) {
+  if (MGR_SORT.col === col) MGR_SORT.dir *= -1;
+  else { MGR_SORT.col = col; MGR_SORT.dir = 1; }
+  renderManagerList();
+}
+function staffProgressRatio(o) {
+  const active = o.kpis.filter(k => k.name);
+  if (!active.length) return 1;
+  return active.filter(k => k.score !== '' && k.score !== null).length / active.length;
+}
+const MGR_SORT_ACCESSORS = { progress: staffProgressRatio };
+function renderManagerList() {
+  const q = document.getElementById('mf-q').value.toLowerCase();
+  const fs = document.getElementById('mf-s').value;
+  let data = STAFF_LIST.filter(o => {
+    if (q && !((o.id + o.name).toLowerCase().includes(q))) return false;
+    const done = staffIsDone(o);
+    if (fs === '已完成' && !done) return false;
+    if (fs === '待評分' && done) return false;
+    return true;
+  });
+  if (MGR_SORT.col) {
+    const col = MGR_SORT.col, dir = MGR_SORT.dir;
+    const acc = MGR_SORT_ACCESSORS[col] || (o => o[col]);
+    data = data.slice().sort((a, b) => {
+      const va = acc(a), vb = acc(b);
+      const aBlank = va === '' || va === null || va === undefined;
+      const bBlank = vb === '' || vb === null || vb === undefined;
+      if (aBlank && bBlank) return 0;
+      if (aBlank) return 1;
+      if (bBlank) return -1;
+      if (typeof va === 'number' || typeof vb === 'number') return (Number(va) - Number(vb)) * dir;
+      return String(va).localeCompare(String(vb), 'zh-Hant') * dir;
+    });
+  }
+  document.getElementById('m-tot').textContent = STAFF_LIST.length;
+  document.getElementById('m-done').textContent = STAFF_LIST.filter(staffIsDone).length;
+  document.getElementById('m-pend').textContent = STAFF_LIST.length - STAFF_LIST.filter(staffIsDone).length;
+  const tb = document.getElementById('manager-body');
+  if (!data.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--LT)">無符合條件的記錄</td></tr>'; }
+  else {
+    tb.innerHTML = data.map(o => {
+      const activeKpis = o.kpis.filter(k => k.name);
+      const scored = activeKpis.filter(k => k.score !== '' && k.score !== null).length;
+      const doneBadge = staffIsDone(o) ? '<span class="bge b-g">已完成</span>' : '<span class="bge b-a">待評分</span>';
+      return `<tr>
+        <td>${d(o.bu)}</td><td>${d(o.dept)}</td><td>${d(o.job)}</td><td>${d(o.id)}</td><td style="font-weight:500">${d(o.name)}</td>
+        <td>${scored}/${activeKpis.length} ${doneBadge}</td>
+        <td>${o.total === '' ? '—' : o.total}</td>
+        <td>${o.bonus === '' ? '—' : Number(o.bonus).toLocaleString()}</td>
+        <td class="actions"><button class="btn btn-sm" onclick="openEval('${o.id}')">編輯</button></td>
+      </tr>`;
+    }).join('');
+  }
+  document.querySelectorAll('#pg-manager .sort-ind').forEach(el => {
+    const col = el.dataset.col;
+    const active = MGR_SORT.col === col;
+    el.textContent = active ? (MGR_SORT.dir === 1 ? '▲' : '▼') : '⇅';
+    el.classList.toggle('active', active);
+  });
+}
+
+function openEval(id) {
+  const o = STAFF_LIST.find(x => String(x.id) === String(id));
+  if (!o) return;
+  EDIT_STAFF = JSON.parse(JSON.stringify(o));
+  document.getElementById('ev-name').textContent = o.name + '（' + o.id + '）';
+  document.getElementById('ev-meta').innerHTML = o.bu + ' · ' + o.dept + ' · ' + o.job + ' · <span style="color:var(--R);font-weight:700">獎金基數 ' + Number(o.base).toLocaleString() + '</span>';
+  document.getElementById('ev-comment').value = o.comment || '';
+  document.getElementById('ev-err').style.display = 'none';
+  const box = document.getElementById('ev-kpis');
+  box.innerHTML = EDIT_STAFF.kpis.filter(k => k.name).map(k => {
+    const scoreField = k.editable
+      ? `<div class="kpi-score-box"><label>評分（0~${k.cap}）</label><input type="number" min="0" max="${k.cap}" value="${k.score === '' ? '' : k.score}" data-idx="${k.idx}" oninput="onScoreInput(${k.idx})"></div>`
+      : `<div><label>評分</label><div class="readonly-val">${k.score === '' ? '尚未評分' : k.score}</div></div>`;
+    return `<div class="kpi-row ${k.editable ? 'editable' : ''}" id="kpi-row-${k.idx}">
+      <div class="kpi-row-hd">
+        <span class="kpi-row-name"><span class="kpi-idx">KPI ${k.idx + 1}</span>${k.name}</span>
+        <div class="kpi-row-meta">
+          <span class="bge b-b">權重 ${k.weight}%</span>
+          <span class="bge b-gr">評分上限 ${k.cap}</span>
+          <span class="bge ${k.editable ? 'b-r' : 'b-gr'}">評分者：${k.rater}${k.editable ? '（您）' : ''}</span>
+        </div>
+      </div>
+      <div class="kpi-row-body">
+        ${scoreField}
+        <div>加權分數：<span class="kpi-weighted" id="kpi-w-${k.idx}">${k.weighted === '' ? '—' : k.weighted}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+  updateEvalSummary();
+  openM('m-eval');
+}
+function onScoreInput(idx) {
+  const input = document.querySelector(`#kpi-row-${idx} input[type=number]`);
+  const k = EDIT_STAFF.kpis.find(x => x.idx === idx);
+  let v = input.value === '' ? '' : Number(input.value);
+  if (v !== '' && v > k.cap) { v = k.cap; input.value = v; }
+  if (v !== '' && v < 0) { v = 0; input.value = v; }
+  k.score = v;
+  k.weighted = v === '' ? '' : Math.round(v * k.weight / 100 * 10) / 10;
+  document.getElementById('kpi-w-' + idx).textContent = k.weighted === '' ? '—' : k.weighted;
+  updateEvalSummary();
+}
+function updateEvalSummary() {
+  const active = EDIT_STAFF.kpis.filter(k => k.name);
+  const total = active.reduce((s, k) => s + (k.weighted === '' ? 0 : Number(k.weighted)), 0);
+  const bonus = Math.round(EDIT_STAFF.base * total / 100);
+  document.getElementById('ev-total').textContent = Math.round(total * 10) / 10;
+  document.getElementById('ev-bonus').textContent = money(bonus);
+}
+async function saveEvaluation() {
+  const scores = EDIT_STAFF.kpis.filter(k => k.editable).map(k => ({ idx: k.idx, score: k.score }));
+  const comment = document.getElementById('ev-comment').value;
+  load(true, '儲存中...');
+  const res = await POST({ action: 'saveEvaluation', staffId: EDIT_STAFF.id, managerId: CU.id, managerName: CU.name, scores, comment });
+  load(false);
+  if (!res.ok) { const err = document.getElementById('ev-err'); err.textContent = res.err || '儲存失敗'; err.style.display = 'block'; return; }
+  const i = STAFF_LIST.findIndex(x => String(x.id) === String(EDIT_STAFF.id));
+  if (i >= 0) STAFF_LIST[i] = Object.assign({}, STAFF_LIST[i], res.data, { kpis: STAFF_LIST[i].kpis.map((k, idx) => Object.assign({}, res.data.kpis[idx], { editable: k.editable })) });
+  closeM('m-eval'); renderManagerList(); toast('評分已儲存');
+}
+</script>
+</body>
+</html>

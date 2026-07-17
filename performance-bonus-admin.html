@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>建達國際 — 績效獎金系統（管理後台）</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<style>
+:root{
+  --R:#C0111A;--RD:#8B0000;--RL:#FFF4F4;--RP:#FDEAEA;--RB:#F2BCBC;--RT:#7A1A1A;
+  --G:#F5F3F0;--G2:#ECEAE6;--G3:#E0DBD5;--W:#fff;
+  --T:#1A1A1A;--M:#888;--LT:#BBB;
+  --r:10px;--rlg:14px;--rsm:7px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;background:var(--G);color:var(--T);font-size:14px;line-height:1.6;min-height:100vh}
+.page{display:none;flex-direction:column;min-height:100vh}
+.page.active{display:flex}
+.content{flex:1;padding:1.25rem;max-width:1600px;width:100%;margin:0 auto}
+
+/* Header */
+.hdr{background:var(--R);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-ico{width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.brand-co{font-size:10px;color:rgba(255,255,255,.72);letter-spacing:.08em}
+.brand-ttl{font-size:14px;font-weight:500;color:#fff}
+.hdr-btns{display:flex;gap:7px;align-items:center}
+.hbtn{background:rgba(255,255,255,.18);border:none;border-radius:7px;color:#fff;padding:6px 11px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;font-family:inherit}
+.hbtn:hover{background:rgba(255,255,255,.3)}
+
+/* Admin nav */
+.anav{background:var(--RD);padding:0 16px;display:flex;overflow-x:auto}
+.tbtn{background:transparent;border:none;color:rgba(255,255,255,.62);padding:10px 12px;cursor:pointer;font-size:12px;border-radius:8px 8px 0 0;font-family:inherit;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.tbtn.on{background:#fff;color:var(--RD);font-weight:500}
+.tbtn:hover:not(.on){background:rgba(255,255,255,.12);color:#fff}
+.tpanel{display:none}.tpanel.on{display:block}
+
+/* Login */
+.lhero{background:var(--R);padding:28px 0 52px;text-align:center}
+.lring{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.lco{font-size:11px;color:rgba(255,255,255,.72);letter-spacing:.1em;margin-bottom:5px}
+.lttl{color:#fff;font-size:19px;font-weight:500}
+.lsub{color:rgba(255,255,255,.85);font-size:12px;margin-top:4px}
+.lcardwrap{display:flex;justify-content:center;padding:0 1rem 1.5rem;margin-top:-26px}
+.lcard{background:#fff;border-radius:16px;border:.5px solid var(--RB);padding:1.5rem;width:100%;max-width:370px;box-shadow:0 2px 20px rgba(192,17,26,.1)}
+
+/* Inputs */
+input,select,textarea{border:1px solid var(--G3);border-radius:var(--rsm);padding:7px 11px;font-size:13px;font-family:inherit;color:var(--T);width:100%;background:#fff;outline:none;transition:border .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--R);box-shadow:0 0 0 3px rgba(192,17,26,.1)}
+label{font-size:12px;color:var(--M);display:block;margin-bottom:4px}
+textarea{resize:vertical;min-height:70px;font-family:inherit}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--rsm);border:1px solid var(--G3);background:#fff;cursor:pointer;font-size:13px;font-family:inherit;color:var(--T)}
+.btn:hover{background:var(--G2)}
+.btn-r{background:var(--R);color:#fff;border-color:var(--R)}
+.btn-r:hover{background:var(--RD);border-color:var(--RD)}
+.btn-sm{padding:4px 9px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+
+/* Cards */
+.card{background:#fff;border:.5px solid var(--G3);border-radius:var(--rlg);overflow:hidden}
+.card-hd{background:var(--RL);padding:9px 14px;border-bottom:.5px solid var(--RB);font-size:13px;font-weight:500;color:var(--RD)}
+
+/* Stats */
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+.sgrid5{grid-template-columns:repeat(5,1fr)}
+.stat{background:var(--G2);border-radius:var(--r);padding:12px 14px;border:.5px solid var(--G3)}
+.stat.acc{background:var(--R);border-color:var(--R)}
+.slbl{font-size:11px;color:var(--M);margin-bottom:5px}
+.stat.acc .slbl{color:rgba(255,255,255,.75)}
+.sval{font-size:24px;font-weight:500}
+.stat.acc .sval{color:#fff}
+
+/* Badges */
+.bge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.bge-lg{font-size:11px;padding:2px 9px}
+.bge-lg.b-gr{color:#1A5FAD;font-weight:700}
+.bge-lg.b-g{color:#16A34A;font-weight:700}
+.bge-lg.b-a{color:#D97706;font-weight:700}
+.b-r{background:var(--RP);color:var(--RT)}
+.b-g{background:#EAF3DE;color:#27500A}
+.b-a{background:#FAEEDA;color:#633806}
+.b-b{background:#E6F0FB;color:#0C447C}
+.b-gr{background:var(--G2);color:#555}
+
+/* Table */
+.twrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
+th{padding:8px 10px;text-align:left;font-weight:500;font-size:11px;background:var(--RL);color:var(--RT);border-bottom:.5px solid var(--RB)}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{background:var(--RP)}
+.sort-ind{display:inline-block;width:12px;color:var(--LT);font-size:10px;margin-left:2px}
+.sort-ind.active{color:var(--R);font-weight:700}
+td{padding:8px 10px;border-top:.5px solid var(--G3);vertical-align:middle}
+
+/* KPI清單：欄位較多，縮小字級與留白，並讓表頭可換行，盡量不需要橫向捲動 */
+#tab-kp table{font-size:11px}
+#tab-kp th{padding:6px 5px;white-space:normal;line-height:1.3;text-align:center}
+#tab-kp td{padding:5px 6px;text-align:center}
+#tab-kp td.actions{display:flex;gap:5px;justify-content:center}
+tr:nth-child(even) td{background:#FFF8F8}
+
+/* Progress */
+.pbar{height:7px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,.45);margin-top:7px}
+.pfill{height:100%;border-radius:4px;transition:width .4s}
+
+/* Modals */
+.mover{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem;overflow-y:auto}
+.modal{background:#fff;border-radius:var(--rlg);padding:1.5rem;width:100%;border:.5px solid var(--RB);box-shadow:0 2px 20px rgba(192,17,26,.1);margin:auto}
+.msm{max-width:420px}.mlg{max-width:760px}
+.mttl{font-size:15px;font-weight:500;color:var(--RD);margin-bottom:1rem}
+.frow{margin-bottom:.9rem}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.9rem}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:.9rem}
+.mft{display:flex;gap:8px;margin-top:1.25rem}
+.mft .btn{flex:1;justify-content:center}
+.hlstrip{background:var(--RL);border-left:3px solid var(--R);border-radius:0 8px 8px 0;padding:9px 13px;margin-bottom:1.1rem}
+
+/* Toast */
+.toast{position:fixed;top:18px;right:18px;background:var(--RD);color:#fff;padding:9px 16px;border-radius:9px;font-size:13px;font-weight:500;z-index:2000;opacity:0;transform:translateY(-8px);transition:all .25s;pointer-events:none}
+.toast.on{opacity:1;transform:translateY(0)}
+
+/* Upload zone */
+.uz{border:2px dashed var(--RB);border-radius:var(--r);padding:1.75rem;text-align:center;background:var(--RL);cursor:pointer;display:block}
+.uz:hover{border-color:var(--R);background:var(--RP)}
+.uz p{font-size:13px;color:var(--RD);font-weight:500;margin-bottom:2px}
+.uz small{color:var(--M);font-size:11px}
+
+/* Filters */
+.filters{display:flex;gap:7px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.filters input,.filters select{width:auto;flex:1;min-width:100px}
+
+/* Sheet bar */
+.sbar{background:var(--RL);border:.5px solid var(--RB);border-radius:var(--rsm);padding:8px 13px;margin-bottom:1.1rem;display:flex;align-items:center;gap:9px}
+.sbar input{border-color:var(--RB);flex:1}
+.sbar label{margin:0;font-size:12px;color:var(--RT);white-space:nowrap;flex-shrink:0}
+
+/* Inner tabs */
+.itabs{display:flex;gap:4px;margin-bottom:1.1rem;flex-wrap:wrap}
+.itab{background:var(--G2);border:.5px solid var(--G3);border-radius:var(--rsm);padding:6px 12px;cursor:pointer;font-size:12px;font-family:inherit;color:var(--M)}
+.itab.on{background:var(--R);color:#fff;border-color:var(--R);font-weight:500}
+.ipanel{display:none}.ipanel.on{display:block}
+
+/* Field list */
+.flist{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:5px}
+.fitem{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--M)}
+.fitem::before{content:'✓';color:var(--R);font-weight:700;flex-shrink:0}
+
+/* Spinner */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:28px;height:28px;border:3px solid var(--RB);border-top-color:var(--R);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 8px}
+
+/* Info box */
+.ibox{background:var(--RL);border:.5px solid var(--RB);border-radius:var(--rsm);padding:10px 13px;margin-bottom:.9rem;font-size:12px;color:var(--RD)}
+
+/* KPI rows (config modal) */
+.kpi-row{border:.5px solid var(--G3);border-radius:var(--r);padding:12px 14px;margin-bottom:9px;background:var(--G)}
+.kpi-row.editable{background:var(--RL);border-color:var(--RB)}
+.kpi-row-hd{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.kpi-row-name{font-weight:600;font-size:17px}
+.kpi-idx{font-size:12px;color:var(--M);font-weight:500;margin-right:6px}
+.kpi-row-meta{display:flex;gap:6px;flex-wrap:wrap}
+.kpi-row-body{display:flex;align-items:end;gap:10px;flex-wrap:wrap}
+.kpi-score-box{width:110px}
+.kpi-weighted{font-size:13px;color:var(--RD);font-weight:600;padding-bottom:8px}
+.readonly-val{font-size:16px;font-weight:600;padding:6px 0}
+.summary-box{background:var(--RL);border:.5px solid var(--RB);border-radius:var(--r);padding:14px 16px;margin-top:14px}
+.summary-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px}
+.summary-row.total{font-size:17px;font-weight:600;padding-top:6px}
+.summary-row.total .score-big{font-size:39px;font-weight:700;color:var(--R);line-height:1}
+.summary-row.big{font-size:16px;font-weight:700;color:var(--R);padding-top:8px;margin-top:6px;border-top:.5px dashed var(--RB)}
+.deduct-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px;color:var(--M);gap:8px}
+.deduct-row label{margin:0;font-size:12px;color:var(--M)}
+.deduct-row input{width:130px;text-align:right;padding:4px 8px;font-size:12px}
+.summary-row.final{font-size:19px;font-weight:700;color:var(--R);padding-top:8px;margin-top:6px;border-top:.5px dashed var(--RB)}
+
+@media(max-width:640px){
+  .sgrid{grid-template-columns:repeat(2,1fr)}
+  .fg2,.fg3{grid-template-columns:1fr}
+  .tbtn span{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ════ LOGIN ════ -->
+<div class="page active" id="pg-login">
+  <div class="lhero">
+    <div class="lring">
+      <svg width="26" height="26" viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 3v18h18"/><path d="M18.7 8 12 14.7 8.7 11.4 3.7 16.4"/>
+      </svg>
+    </div>
+    <p class="lco">建達國際股份有限公司</p>
+    <h1 class="lttl">績效獎金系統</h1>
+    <p class="lsub">管理者後台</p>
+  </div>
+  <div class="lcardwrap">
+    <div class="lcard">
+      <div class="frow"><label>管理者帳號</label><input id="lid" placeholder="輸入管理者帳號" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="frow" style="position:relative">
+        <label>密碼</label>
+        <input type="password" id="lpw" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:40px">
+        <button onclick="toggleEye(this,'lpw')" style="position:absolute;right:6px;bottom:6px;background:none;border:none;cursor:pointer;color:var(--M);padding:3px">👁</button>
+      </div>
+      <div id="lerr" style="display:none;background:var(--RP);color:var(--RD);font-size:12px;padding:8px 11px;border-radius:7px;margin-bottom:.9rem;border:.5px solid var(--RB)"></div>
+      <button class="btn btn-r" style="width:100%;justify-content:center;padding:10px;font-size:14px" onclick="doLogin()">登入</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ 管理後台 ════ -->
+<div class="page" id="pg-admin">
+  <div class="hdr">
+    <div class="brand">
+      <div class="brand-ico">建</div>
+      <div><div class="brand-co">建達國際股份有限公司</div><div class="brand-ttl">管理者後台</div></div>
+    </div>
+    <div class="hdr-btns">
+      <button class="hbtn" onclick="openPw()">修改密碼</button>
+      <button class="hbtn" onclick="logout()">登出</button>
+    </div>
+  </div>
+  <nav class="anav">
+    <button class="tbtn on" onclick="goTab('ov',this)"><span>數據總覽</span></button>
+    <button class="tbtn"    onclick="goTab('qt',this)"><span>季度設定</span></button>
+    <button class="tbtn"    onclick="goTab('kp',this)"><span>KPI清單</span></button>
+    <button class="tbtn"    onclick="goTab('ad',this)"><span>管理員設定</span></button>
+    <button class="tbtn"    onclick="goTab('mg',this)"><span>主管設定</span></button>
+    <button class="tbtn"    onclick="goTab('sf',this)"><span>員工設定</span></button>
+    <button class="tbtn"    onclick="goTab('nt',this)"><span>通知設定</span></button>
+    <button class="tbtn"    onclick="goTab('sy',this)"><span>系統設定</span></button>
+    <button class="tbtn"    onclick="goTab('ex',this)"><span>檔案匯出</span></button>
+  </nav>
+  <div class="content">
+
+    <!-- 數據總覽 -->
+    <div class="tpanel on" id="tab-ov">
+      <div class="sgrid sgrid5" style="margin-bottom:1.1rem">
+        <div class="stat"><div class="slbl">獎金計算季度</div><div class="sval" id="a-quarter" style="font-size:19px">—</div></div>
+        <div class="stat acc"><div class="slbl">員工總筆數</div><div class="sval" id="a-tot">0</div></div>
+        <div class="stat"><div class="slbl">已完成評分</div><div class="sval" id="a-done">0</div></div>
+        <div class="stat"><div class="slbl">待評分</div><div class="sval" id="a-pend">0</div></div>
+        <div class="stat"><div class="slbl">已完成百分比</div><div class="sval" id="a-pct">0%</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd">各事業部統計</div>
+        <div style="padding:.9rem" id="div-stats"></div>
+      </div>
+    </div>
+
+    <!-- 季度設定 -->
+    <div class="tpanel" id="tab-qt">
+      <div class="card" style="padding:1.4rem;max-width:480px">
+        <div class="mttl" style="margin-bottom:1rem">本次績效獎金計算季度</div>
+        <div class="fg2">
+          <div><label>年度</label><input id="qt-year" type="number" placeholder="例如：2026"></div>
+          <div><label>季度</label><input id="qt-quarter" type="number" min="1" max="4" placeholder="1～4"></div>
+        </div>
+        <button class="btn btn-r" onclick="saveQuarterSetting()">儲存設定</button>
+        <div class="ibox" id="qt-current" style="margin-top:1rem">尚未載入目前設定</div>
+      </div>
+    </div>
+
+    <!-- KPI清單 -->
+    <div class="tpanel" id="tab-kp">
+      <div class="itabs">
+        <button class="itab on" onclick="goItab('kp-list',this)">名單與編輯</button>
+        <button class="itab"    onclick="goItab('kp-up',this)">批次上傳</button>
+      </div>
+      <div class="ipanel on" id="kp-list">
+        <div class="filters">
+          <input id="kf-q" placeholder="搜尋事業部、部門、工號、姓名..." oninput="renderKPIList()">
+          <button class="btn btn-r btn-sm" onclick="refreshKPIList()">更新資料</button>
+          <span id="kf-cnt" style="font-size:12px;color:var(--M);white-space:nowrap"></span>
+        </div>
+        <div class="ibox">KPI 設定（事業部/部門/職類/姓名/各項KPI名稱/權重/分數上限/評分者）請透過下方「批次上傳」建立或更新；這裡的「編輯」僅能調整獎金基數，以及評分者為「人資」的項目評分。</div>
+        <div class="card">
+          <div class="twrap">
+            <table>
+              <thead><tr>
+                <th class="sortable" onclick="sortKPIList('bu')">事業部<span class="sort-ind" data-col="bu">⇅</span></th>
+                <th class="sortable" onclick="sortKPIList('dept')">部門<span class="sort-ind" data-col="dept">⇅</span></th>
+                <th class="sortable" onclick="sortKPIList('job')">職類<span class="sort-ind" data-col="job">⇅</span></th>
+                <th class="sortable" onclick="sortKPIList('id')">工號<span class="sort-ind" data-col="id">⇅</span></th>
+                <th class="sortable" onclick="sortKPIList('name')">姓名<span class="sort-ind" data-col="name">⇅</span></th>
+                <th class="sortable" onclick="sortKPIList('base')">獎金基數<span class="sort-ind" data-col="base">⇅</span></th>
+                <th class="sortable" onclick="sortKPIList('progress')">評分進度<span class="sort-ind" data-col="progress">⇅</span></th>
+                <th class="sortable" onclick="sortKPIList('total')">績效總分<span class="sort-ind" data-col="total">⇅</span></th>
+                <th class="sortable" onclick="sortKPIList('bonus')">獎金預估<span class="sort-ind" data-col="bonus">⇅</span></th>
+                <th class="sortable" onclick="sortKPIList('chargebackDeduct')">倒帳扣款<span class="sort-ind" data-col="chargebackDeduct">⇅</span></th>
+                <th class="sortable" onclick="sortKPIList('arDeduct')">逾期AR扣款<span class="sort-ind" data-col="arDeduct">⇅</span></th>
+                <th class="sortable" onclick="sortKPIList('loanDeduct')">逾期借用扣款<span class="sort-ind" data-col="loanDeduct">⇅</span></th>
+                <th class="sortable" onclick="sortKPIList('actualBonus')">實發獎金<span class="sort-ind" data-col="actualBonus">⇅</span></th>
+                <th></th>
+              </tr></thead>
+              <tbody id="kpi-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="ipanel" id="kp-up">
+        <div class="card" style="padding:1.4rem">
+          <div class="mttl" style="margin-bottom:1rem">批次上傳 KPI 設定</div>
+          <label class="uz" style="margin-bottom:1.1rem">
+            <p>拖放檔案至此，或點擊選取</p><small>.xlsx · .csv</small>
+            <input type="file" accept=".xlsx,.csv" style="display:none" onchange="handleUpload(this,'kpi')">
+          </label>
+          <p id="kpi-up-nm" style="font-size:12px;color:var(--RD);margin-bottom:.9rem;display:none"></p>
+          <div style="background:var(--G);border-radius:var(--rsm);padding:11px 13px;margin-bottom:1.1rem">
+            <p style="font-size:12px;font-weight:500;color:var(--RD);margin-bottom:7px">必要欄位（表頭需完全相符）</p>
+            <div class="flist">
+              <div class="fitem">事業部</div><div class="fitem">部門</div><div class="fitem">職類</div>
+              <div class="fitem">工號</div><div class="fitem">姓名</div><div class="fitem">獎金基數</div>
+              <div class="fitem">KPI1名稱</div><div class="fitem">KPI1權重</div><div class="fitem">KPI1上限</div><div class="fitem">KPI1評分者</div>
+              <div class="fitem">KPI2名稱</div><div class="fitem">KPI2權重</div><div class="fitem">KPI2上限</div><div class="fitem">KPI2評分者</div>
+              <div class="fitem">…以此類推至 KPI6</div>
+            </div>
+          </div>
+          <div class="ibox">評分者欄位：填「主管」代表由能看到此員工的責任主管評分；填「人資」代表由管理後台（KPI清單編輯畫面）直接評分；也可以填特定主管姓名或工號指定跨部門評分人。</div>
+          <div class="ibox" id="kpi-up-preview" style="display:none"></div>
+          <button class="btn btn-r" id="kpi-up-confirm" style="display:none" onclick="confirmUpload('kpi')">確認匯入</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 管理員設定 -->
+    <div class="tpanel" id="tab-ad">
+      <div class="card" style="padding:1.25rem;margin-bottom:1rem">
+        <div class="mttl" style="margin-bottom:.9rem">新增管理員帳號</div>
+        <div class="fg2">
+          <div><label>ID</label><input id="na-id" placeholder="如：A002"></div>
+          <div><label>姓名</label><input id="na-nm"></div>
+          <div><label>登入帳號</label><input id="na-acc"></div>
+          <div><label>Email</label><input id="na-em" type="email"></div>
+          <div><label>初始密碼</label><input id="na-pw" type="password"></div>
+          <div><label>角色</label><input id="na-role" value="管理員"></div>
+        </div>
+        <button class="btn btn-r" onclick="addAdmin()">新增帳號</button>
+      </div>
+      <div class="card">
+        <div class="card-hd">現有管理員清單</div>
+        <div id="adlist"></div>
+      </div>
+    </div>
+
+    <!-- 主管設定 -->
+    <div class="tpanel" id="tab-mg">
+      <div class="itabs">
+        <button class="itab on" onclick="goItab('mg-list',this)">名單與編輯</button>
+        <button class="itab"    onclick="goItab('mg-up',this)">批次上傳</button>
+      </div>
+      <div class="ipanel on" id="mg-list">
+        <div class="card" style="padding:1.25rem;margin-bottom:1rem">
+          <div class="mttl" style="margin-bottom:.9rem">新增主管</div>
+          <div class="fg3">
+            <div><label>事業部</label><input id="nm-bu"></div>
+            <div><label>部門</label><input id="nm-dept"></div>
+            <div><label>姓名</label><input id="nm-nm"></div>
+            <div><label>工號</label><input id="nm-id"></div>
+            <div><label>責任部門</label><input id="nm-scope" placeholder="員工的「部門」；填「XX事業部」看整個事業部；填「全部門」看全公司"></div>
+            <div><label>密碼（留空預設同工號）</label><input id="nm-pw" type="password"></div>
+          </div>
+          <button class="btn btn-r" onclick="saveManagerForm()">新增主管</button>
+        </div>
+        <div class="card">
+          <div class="card-hd">現有主管清單</div>
+          <div class="twrap"><table>
+            <thead><tr><th>事業部</th><th>部門</th><th>姓名</th><th>工號</th><th>責任部門</th><th></th></tr></thead>
+            <tbody id="mglist"></tbody>
+          </table></div>
+        </div>
+      </div>
+      <div class="ipanel" id="mg-up">
+        <div class="card" style="padding:1.4rem">
+          <div class="mttl" style="margin-bottom:1rem">批次上傳主管資料</div>
+          <label class="uz" style="margin-bottom:1.1rem">
+            <p>拖放檔案至此，或點擊選取</p><small>.xlsx · .csv</small>
+            <input type="file" accept=".xlsx,.csv" style="display:none" onchange="handleUpload(this,'manager')">
+          </label>
+          <p id="manager-up-nm" style="font-size:12px;color:var(--RD);margin-bottom:.9rem;display:none"></p>
+          <div style="background:var(--G);border-radius:var(--rsm);padding:11px 13px;margin-bottom:1.1rem">
+            <p style="font-size:12px;font-weight:500;color:var(--RD);margin-bottom:7px">必要欄位</p>
+            <div class="flist">
+              <div class="fitem">事業部</div><div class="fitem">部門</div><div class="fitem">姓名</div>
+              <div class="fitem">工號</div><div class="fitem">密碼</div><div class="fitem">責任部門</div>
+            </div>
+          </div>
+          <div class="ibox">工號已存在時更新資料；新主管若密碼欄空白，預設密碼為工號。</div>
+          <div class="ibox" id="manager-up-preview" style="display:none"></div>
+          <button class="btn btn-r" id="manager-up-confirm" style="display:none" onclick="confirmUpload('manager')">確認匯入</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 員工設定 -->
+    <div class="tpanel" id="tab-sf">
+      <div class="itabs">
+        <button class="itab on" onclick="goItab('sf-list',this)">名單與編輯</button>
+        <button class="itab"    onclick="goItab('sf-up',this)">批次上傳</button>
+      </div>
+      <div class="ipanel on" id="sf-list">
+        <div class="card" style="padding:1.25rem;margin-bottom:1rem">
+          <div class="mttl" style="margin-bottom:.9rem">新增員工 Email 對照資料</div>
+          <div class="fg3">
+            <div><label>事業部</label><input id="ns-bu"></div>
+            <div><label>部門</label><input id="ns-dept"></div>
+            <div><label>姓名</label><input id="ns-nm"></div>
+            <div><label>工號</label><input id="ns-id"></div>
+            <div><label>Email</label><input id="ns-em" type="email"></div>
+          </div>
+          <button class="btn btn-r" onclick="saveStaffForm()">新增</button>
+        </div>
+        <div class="card">
+          <div class="card-hd">現有員工 Email 對照清單</div>
+          <div class="twrap"><table>
+            <thead><tr><th>事業部</th><th>部門</th><th>姓名</th><th>工號</th><th>Email</th><th></th></tr></thead>
+            <tbody id="sflist"></tbody>
+          </table></div>
+        </div>
+      </div>
+      <div class="ipanel" id="sf-up">
+        <div class="card" style="padding:1.4rem">
+          <div class="mttl" style="margin-bottom:1rem">批次上傳員工資料</div>
+          <label class="uz" style="margin-bottom:1.1rem">
+            <p>拖放檔案至此，或點擊選取</p><small>.xlsx · .csv</small>
+            <input type="file" accept=".xlsx,.csv" style="display:none" onchange="handleUpload(this,'staff')">
+          </label>
+          <p id="staff-up-nm" style="font-size:12px;color:var(--RD);margin-bottom:.9rem;display:none"></p>
+          <div style="background:var(--G);border-radius:var(--rsm);padding:11px 13px;margin-bottom:1.1rem">
+            <p style="font-size:12px;font-weight:500;color:var(--RD);margin-bottom:7px">必要欄位</p>
+            <div class="flist">
+              <div class="fitem">事業部</div><div class="fitem">部門</div><div class="fitem">姓名</div>
+              <div class="fitem">工號</div><div class="fitem">email</div>
+            </div>
+          </div>
+          <div class="ibox" id="staff-up-preview" style="display:none"></div>
+          <button class="btn btn-r" id="staff-up-confirm" style="display:none" onclick="confirmUpload('staff')">確認匯入</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 通知設定 -->
+    <div class="tpanel" id="tab-nt">
+      <div class="card" style="padding:1.4rem">
+        <div class="mttl" style="margin-bottom:1rem">績效獎金通知</div>
+        <p style="font-size:12px;color:var(--M);margin-bottom:1rem">將每位員工的績效獎金明細（基本資料／獎金基數／各項KPI／評分／加權分數／總評／績效總分／績效獎金）整理成一頁式信件，依「員工明細」中對照的 Email 逐一寄送。</p>
+        <div class="frow"><label>發送範圍</label>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <button class="btn btn-r on-nt-scope" onclick="selNtScope(this,'ALL')">全部員工</button>
+            <button class="btn on-nt-scope" onclick="selNtScope(this,'BU')">依事業部</button>
+            <button class="btn on-nt-scope" onclick="selNtScope(this,'DEPT')">依部門</button>
+          </div>
+        </div>
+        <div class="frow" id="nt-value-row" style="display:none">
+          <label id="nt-value-lbl">請勾選事業部（可多選）</label>
+          <div id="nt-value-checks" style="display:flex;gap:14px;flex-wrap:wrap"></div>
+        </div>
+        <div class="ibox">預覽：符合條件共 <strong id="nt-cnt">0</strong> 筆，其中 <strong id="nt-notdone">0</strong> 筆評分尚未完成、<strong id="nt-noemail">0</strong> 筆查無 Email（皆將略過，不寄送）；本次可寄送 <strong id="nt-willsend">0</strong> 筆</div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn btn-r" onclick="sendBonusNotification()">批次發送</button>
+          <button class="btn" id="nt-individual-btn" onclick="toggleIndividualSend(this)">個別發送</button>
+        </div>
+      </div>
+      <div class="card" id="nt-willsend-card" style="margin-top:1rem;display:none">
+        <div class="card-hd">本次可寄送名單</div>
+        <div class="twrap">
+          <table>
+            <thead><tr><th>工號</th><th>姓名</th><th>事業部</th><th>部門</th><th>Email</th><th id="nt-action-th"></th></tr></thead>
+            <tbody id="nt-willsend-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 系統設定 -->
+    <div class="tpanel" id="tab-sy">
+      <div class="sbar">
+        <label>Google 試算表網址</label>
+        <input id="sheet-url" placeholder="貼上試算表網址（僅供記錄）">
+        <button class="btn btn-r btn-sm" onclick="reloadAdmin()">重新載入資料</button>
+      </div>
+      <div class="ibox">此欄位僅供記錄與提醒之用，實際連線位址由前端程式碼開頭的 GAS 常數決定。</div>
+      <div class="card" style="padding:1.25rem;margin-top:1rem">
+        <div class="mttl" style="margin-bottom:.6rem">試算表結構檢查</div>
+        <p style="font-size:12px;color:var(--M);margin-bottom:.9rem">登入時系統會自動檢查「KPI總表／管理員／主管明細／員工明細」4 個分頁是否存在、表頭是否正確，缺少的會自動建立（已有資料的分頁不會被覆蓋）。也可以在這裡手動再檢查一次。</p>
+        <button class="btn btn-r btn-sm" onclick="runSetupSheets(true)">重新檢查／建立分頁結構</button>
+        <div id="setup-result" style="margin-top:.9rem"></div>
+      </div>
+    </div>
+
+    <!-- 檔案匯出 -->
+    <div class="tpanel" id="tab-ex">
+      <div class="card" style="padding:1.4rem;max-width:520px">
+        <div class="mttl" style="margin-bottom:1rem">匯出績效獎金試算表</div>
+        <p style="font-size:12px;color:var(--M);margin-bottom:1rem">匯出目前 KPI 清單中「已完成全部考核」的員工資料，欄位包含：BU事業部／部門／員工編號／員工姓名／績效考核分數／主管總評／實發獎金金額。尚未完成考核的員工不會匯出。</p>
+        <div class="ibox">將匯出 <strong id="ex-cnt">0</strong> 筆資料（已排除尚未完成考核的員工）</div>
+        <button class="btn btn-r" onclick="exportKPIExcel()">匯出試算表</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════ MODALS ════ -->
+<div class="mover" id="m-pw" style="display:none" onclick="if(event.target===this)closeM('m-pw')">
+  <div class="modal msm">
+    <div class="mttl">修改密碼</div>
+    <div class="frow"><label>目前密碼</label><input type="password" id="pw-cur"></div>
+    <div class="frow"><label>新密碼（至少4位）</label><input type="password" id="pw-new"></div>
+    <div class="frow"><label>確認新密碼</label><input type="password" id="pw-cf"></div>
+    <div id="pw-err" style="display:none;color:var(--R);font-size:12px;margin-bottom:.75rem;padding:7px 11px;background:var(--RP);border-radius:7px"></div>
+    <div class="mft">
+      <button class="btn" onclick="closeM('m-pw')">取消</button>
+      <button class="btn btn-r" onclick="doChangePw()">確認修改</button>
+    </div>
+  </div>
+</div>
+
+<!-- 管理員：KPI設定編輯彈窗 -->
+<div class="mover" id="m-kpi" style="display:none" onclick="if(event.target===this)closeM('m-kpi')">
+  <div class="modal mlg">
+    <div class="mttl">KPI 評核</div>
+    <div class="hlstrip">
+      <div id="km-name" style="font-weight:600;color:var(--RD);font-size:20px"></div>
+      <div id="km-meta" style="font-size:12px;color:var(--M);margin-top:2px"></div>
+    </div>
+    <div class="frow"><label>獎金基數</label><input id="km-base" type="number" min="0" oninput="updateAdminSummary()"></div>
+    <div id="km-kpis"></div>
+    <div class="card" style="padding:11px 14px;margin-top:10px;background:var(--G)">
+      <div style="font-size:12px;color:var(--M);margin-bottom:4px">主管總評</div>
+      <div id="km-comment" style="font-size:13px;white-space:pre-wrap">（無）</div>
+    </div>
+    <div id="km-summary" class="summary-box">
+      <div class="summary-row total"><span>績效總分</span><span id="km-total" class="score-big">0</span></div>
+      <div class="summary-row big"><span>績效獎金預估</span><span id="km-bonus-est">NT$ 0</span></div>
+      <div class="deduct-row"><label>倒帳扣款（請填負數）</label><input type="number" id="km-deduct-chargeback" value="0" oninput="updateAdminSummary()"></div>
+      <div class="deduct-row"><label>逾期AR扣款（請填負數）</label><input type="number" id="km-deduct-ar" value="0" oninput="updateAdminSummary()"></div>
+      <div class="deduct-row"><label>逾期借用扣款（請填負數）</label><input type="number" id="km-deduct-loan" value="0" oninput="updateAdminSummary()"></div>
+      <div class="summary-row final"><span>實發績效獎金</span><span id="km-bonus-actual">NT$ 0</span></div>
+    </div>
+    <div class="mft">
+      <button class="btn" onclick="closeM('m-kpi')">取消</button>
+      <button class="btn btn-r" onclick="saveKPIConfig()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:3000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;padding:18px 26px;text-align:center;min-width:130px">
+    <div class="spinner"></div>
+    <p id="load-msg" style="font-size:13px;color:var(--RD);font-weight:500"></p>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+//  設定：填入 Apps Script 部署網址（與主管入口頁面共用同一個 GAS 網址）
+// ════════════════════════════════════════════════════
+const GAS = 'https://script.google.com/macros/s/AKfycbyIX5Qn3wID4uMuDjOdmegvdJStBYmOJLIPQ_wmuQAeN5giVHrCI-CZzqnmGNGCSOqI8g/exec';
+const ROLE = 'admin';
+
+// ════════════════════════════════════════════════════
+//  API
+// ════════════════════════════════════════════════════
+async function GET(params) {
+  const url = GAS + '?' + new URLSearchParams(params);
+  const raw = await fetch(url, { mode: 'cors' });
+  if (!raw.ok) throw new Error('HTTP ' + raw.status + ' ' + raw.statusText);
+  return JSON.parse(await raw.text());
+}
+async function POST(body) {
+  const raw = await fetch(GAS, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) });
+  if (!raw.ok) throw new Error('HTTP ' + raw.status + ' ' + raw.statusText);
+  return JSON.parse(await raw.text());
+}
+
+// ════════════════════════════════════════════════════
+//  狀態 / 工具
+// ════════════════════════════════════════════════════
+let CU = null;
+let KPI_LIST = [];
+let ADMINS = [], MANAGERS = [], STAFF_DIR = [];
+let EDIT_KPI_ID = null;
+let UPLOAD_ROWS = { kpi: [], manager: [], staff: [] };
+
+function pg(id) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('pg-' + id).classList.add('active'); }
+function openM(id) { document.getElementById(id).style.display = 'flex'; }
+function closeM(id) { document.getElementById(id).style.display = 'none'; }
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2800); }
+function load(show, msg = '載入中...') {
+  const el = document.getElementById('loading');
+  el.style.display = show ? 'flex' : 'none';
+  if (show) document.getElementById('load-msg').textContent = msg;
+}
+function d(v) { return (v === '' || v === null || v === undefined) ? '<span style="color:var(--LT)">—</span>' : v; }
+function toggleEye(btn, inp) { const i = document.getElementById(inp); i.type = i.type === 'text' ? 'password' : 'text'; }
+function money(v) { return 'NT$ ' + Number(v || 0).toLocaleString(); }
+
+// ════════════════════════════════════════════════════
+//  登入
+// ════════════════════════════════════════════════════
+async function doLogin() {
+  const id = document.getElementById('lid').value.trim();
+  const pw = document.getElementById('lpw').value;
+  if (!id || !pw) { showErr('請輸入帳號與密碼'); return; }
+  if (!GAS) { showErr('尚未設定 GAS 後端網址，請聯絡系統管理員完成部署設定'); return; }
+  load(true, '驗證中...');
+  let res;
+  try { res = await GET({ action: 'login', id, pw, role: ROLE }); }
+  catch (e) { load(false); showErr('網路錯誤：' + e.message); return; }
+  load(false);
+  if (!res.ok) { showErr(res.err || '登入失敗'); return; }
+  document.getElementById('lerr').style.display = 'none';
+  CU = res.user;
+  await initAdmin();
+  pg('admin');
+}
+function showErr(msg) { const e = document.getElementById('lerr'); e.textContent = msg; e.style.display = 'block'; }
+function logout() { CU = null; KPI_LIST = []; pg('login'); }
+
+// ════════════════════════════════════════════════════
+//  修改密碼
+// ════════════════════════════════════════════════════
+function openPw() { ['pw-cur', 'pw-new', 'pw-cf'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pw-err').style.display = 'none'; openM('m-pw'); }
+async function doChangePw() {
+  const cur = document.getElementById('pw-cur').value;
+  const nw = document.getElementById('pw-new').value;
+  const cf = document.getElementById('pw-cf').value;
+  const err = document.getElementById('pw-err');
+  if (nw.length < 4) { err.textContent = '新密碼至少需4個字元'; err.style.display = 'block'; return; }
+  if (nw !== cf) { err.textContent = '兩次輸入不一致'; err.style.display = 'block'; return; }
+  load(true, '更新密碼中...');
+  const res = await POST({ action: 'changePw', id: CU.id, cur, nw, role: ROLE });
+  load(false);
+  if (!res.ok) { err.textContent = res.err || '更新失敗'; err.style.display = 'block'; return; }
+  closeM('m-pw'); toast('密碼已更新');
+}
+
+// ════════════════════════════════════════════════════
+//  管理者後台
+// ════════════════════════════════════════════════════
+async function initAdmin() {
+  load(true, '檢查試算表結構...');
+  try { await runSetupSheets(false); } catch (e) { /* 結構檢查失敗不中斷登入，稍後仍可手動重試 */ }
+  load(true, '載入資料...');
+  try {
+    const [ov, kp, ad, mg, sf, qt] = await Promise.all([
+      GET({ action: 'getOverview' }), GET({ action: 'getKPIList' }),
+      GET({ action: 'getAdmins' }), GET({ action: 'getManagers' }), GET({ action: 'getStaffDirectory' }),
+      GET({ action: 'getQuarterSetting' }),
+    ]);
+    if (ov.ok) renderOverview(ov.data); else toast('總覽載入失敗：' + ov.err);
+    KPI_LIST = kp.ok ? kp.data : [];
+    ADMINS = ad.ok ? ad.data : [];
+    MANAGERS = mg.ok ? mg.data : [];
+    STAFF_DIR = sf.ok ? sf.data : [];
+    if (qt.ok) renderQuarterSetting(qt.data);
+  } catch (e) { load(false); toast('網路錯誤：' + e.message); return; }
+  load(false);
+  renderKPIList(); renderAdmins(); renderManagers(); renderStaffDir(); updateNtPreview();
+  const exCntEl = document.getElementById('ex-cnt');
+  if (exCntEl) exCntEl.textContent = KPI_LIST.filter(kpiIsDone).length;
+}
+async function reloadAdmin() { await initAdmin(); toast('資料已重新載入'); }
+function renderQuarterSetting(d) {
+  document.getElementById('qt-year').value = d.year || '';
+  document.getElementById('qt-quarter').value = d.quarter || '';
+  document.getElementById('qt-current').textContent = d.year && d.quarter
+    ? `目前設定：${d.year} 年 第 ${d.quarter} 季（最後修改：${d.updated || '—'}）`
+    : '尚未設定，請填寫年度與季度後儲存';
+  const quarterEl = document.getElementById('a-quarter');
+  if (quarterEl) quarterEl.textContent = d.year && d.quarter ? `${d.year} 年第 ${d.quarter} 季` : '尚未設定';
+}
+async function saveQuarterSetting() {
+  const year = document.getElementById('qt-year').value.trim();
+  const quarter = document.getElementById('qt-quarter').value.trim();
+  if (!year || !quarter) { toast('請填寫年度與季度'); return; }
+  load(true, '儲存中...');
+  const res = await POST({ action: 'saveQuarterSetting', year, quarter, by: CU.id });
+  load(false);
+  if (!res.ok) { toast('錯誤：' + res.err); return; }
+  renderQuarterSetting(res.data);
+  toast('季度設定已儲存');
+}
+async function refreshKPIList() {
+  load(true, '更新資料中...');
+  let res;
+  try { res = await GET({ action: 'getKPIList' }); }
+  catch (e) { load(false); toast('網路錯誤：' + e.message); return; }
+  load(false);
+  if (!res.ok) { toast('更新失敗：' + res.err); return; }
+  KPI_LIST = res.data;
+  renderKPIList();
+  const exCntEl = document.getElementById('ex-cnt');
+  if (exCntEl) exCntEl.textContent = KPI_LIST.filter(kpiIsDone).length;
+  toast('KPI 資料已更新');
+}
+function exportKPIExcel() {
+  const doneList = KPI_LIST.filter(kpiIsDone);
+  if (!doneList.length) { toast('目前沒有已完成考核的資料可匯出'); return; }
+  const headers = ['BU事業部', '部門', '員工編號', '員工姓名', '績效考核分數', '主管總評', '實發獎金金額'];
+  const rows = doneList.map(o => [
+    o.bu,
+    o.dept,
+    o.id,
+    o.name,
+    o.total === '' || o.total === undefined ? '' : o.total,
+    o.comment || '',
+    o.actualBonus === '' || o.actualBonus === undefined ? '' : o.actualBonus,
+  ]);
+
+  const FONT = '微軟正黑體';
+  const centerFont = { font: { name: FONT }, alignment: { horizontal: 'center', vertical: 'center' } };
+  const leftFont = { font: { name: FONT }, alignment: { horizontal: 'left', vertical: 'center' } };
+  const headerStyle = {
+    font: { name: FONT, bold: true, color: { rgb: 'FFFFFF' } },
+    fill: { patternType: 'solid', fgColor: { rgb: 'C0111A' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
+  };
+  const COMMENT_COL = 5;
+  const BONUS_COL = 6;
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let r = range.s.r; r <= range.e.r; r++) {
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+      ws[addr].s = r === 0 ? headerStyle : (c === COMMENT_COL ? leftFont : centerFont);
+      if (r > 0 && c === BONUS_COL) ws[addr].z = '#,##0';
+    }
+  }
+  ws['!cols'] = [{ wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 30 }, { wch: 12 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '績效獎金匯出');
+  const today = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `績效獎金匯出_${today}.xlsx`);
+  toast(`已匯出 ${rows.length} 筆資料`);
+}
+async function runSetupSheets(verbose) {
+  const res = await GET({ action: 'setupSheets' });
+  const box = document.getElementById('setup-result');
+  if (!res.ok) {
+    if (box) box.innerHTML = `<div class="ibox" style="color:var(--R)">檢查失敗：${res.err}</div>`;
+    if (verbose) toast('檢查失敗：' + res.err);
+    return res;
+  }
+  const parts = [];
+  if (res.created.length) parts.push('新建立分頁：' + res.created.join('、'));
+  if (res.headerAdded.length) parts.push('補上表頭：' + res.headerAdded.join('、'));
+  if (!res.created.length && !res.headerAdded.length) parts.push('4 個分頁與表頭都已存在，沒有需要異動的地方');
+  if (box) box.innerHTML = `<div class="ibox">${parts.join('；')}</div>`;
+  if (verbose) toast(res.created.length || res.headerAdded.length ? '已自動補齊試算表結構' : '結構檢查完成，沒有異動');
+  return res;
+}
+function goTab(id, btn) {
+  document.querySelectorAll('.tpanel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tbtn').forEach(b => b.classList.remove('on'));
+  document.getElementById('tab-' + id).classList.add('on'); btn.classList.add('on');
+}
+function goItab(id, btn) {
+  const group = btn.closest('.tpanel');
+  group.querySelectorAll('.ipanel').forEach(p => p.classList.remove('on'));
+  group.querySelectorAll('.itab').forEach(b => b.classList.remove('on'));
+  document.getElementById(id).classList.add('on'); btn.classList.add('on');
+}
+
+const DIV_COLORS = ['#C0111A', '#1A5FAD', '#0F7C56', '#7B52C7', '#B87D0F', '#0C7B7C'];
+function renderOverview(o) {
+  document.getElementById('a-tot').textContent = o.total;
+  document.getElementById('a-done').textContent = o.done;
+  document.getElementById('a-pend').textContent = o.pending;
+  document.getElementById('a-pct').textContent = (o.total ? Math.round(o.done / o.total * 100) : 0) + '%';
+  document.getElementById('div-stats').innerHTML = o.byBu.map((b, i) => {
+    const color = DIV_COLORS[i % DIV_COLORS.length];
+    const pct = b.total ? Math.round(b.done / b.total * 100) : 0;
+    return `<div style="background:#FAFAFA;border:.5px solid var(--G3);border-radius:var(--r);padding:12px 14px;margin-bottom:9px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+        <span style="font-weight:500;font-size:13px;color:${color}">${b.bu}</span>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <span class="bge bge-lg b-gr">總計 ${b.total}</span><span class="bge bge-lg b-g">已完成 ${b.done}</span><span class="bge bge-lg b-a">待評分 ${b.total - b.done}</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px">
+        <div class="pbar" style="flex:1;background:var(--G3)"><div class="pfill" style="width:${pct}%;background:${color}"></div></div>
+        <span style="font-size:12px;font-weight:500;color:${color};min-width:32px;text-align:right">${pct}%</span>
+      </div>
+    </div>`;
+  }).join('') || '<p style="color:var(--LT);font-size:12px;padding:.5rem">尚無資料</p>';
+}
+
+// ── KPI清單 ──
+let KPI_SORT = { col: null, dir: 1 };
+function sortKPIList(col) {
+  if (KPI_SORT.col === col) KPI_SORT.dir *= -1;
+  else { KPI_SORT.col = col; KPI_SORT.dir = 1; }
+  renderKPIList();
+}
+function kpiIsDone(o) { return o.kpis.every(k => !k.name || (k.score !== '' && k.score !== null)); }
+function moneyOrDash(v) { return (v === '' || v === null || v === undefined) ? d('') : money(v); }
+function numOrDash(v) { return (v === '' || v === null || v === undefined) ? d('') : Number(v).toLocaleString(); }
+function kpiProgressRatio(o) {
+  const active = o.kpis.filter(k => k.name);
+  if (!active.length) return 1;
+  return active.filter(k => k.score !== '' && k.score !== null).length / active.length;
+}
+const KPI_SORT_ACCESSORS = { progress: kpiProgressRatio };
+function renderKPIList() {
+  const q = document.getElementById('kf-q').value.toLowerCase();
+  let data = KPI_LIST.filter(o => !q || (o.bu + o.dept + o.id + o.name).toLowerCase().includes(q));
+  if (KPI_SORT.col) {
+    const col = KPI_SORT.col, dir = KPI_SORT.dir;
+    const acc = KPI_SORT_ACCESSORS[col] || (o => o[col]);
+    data = data.slice().sort((a, b) => {
+      const va = acc(a), vb = acc(b);
+      const aBlank = va === '' || va === null || va === undefined;
+      const bBlank = vb === '' || vb === null || vb === undefined;
+      if (aBlank && bBlank) return 0;
+      if (aBlank) return 1;
+      if (bBlank) return -1;
+      if (typeof va === 'number' || typeof vb === 'number') return (Number(va) - Number(vb)) * dir;
+      return String(va).localeCompare(String(vb), 'zh-Hant') * dir;
+    });
+  }
+  document.getElementById('kf-cnt').textContent = '共 ' + data.length + ' 筆';
+  const tb = document.getElementById('kpi-body');
+  if (!data.length) { tb.innerHTML = '<tr><td colspan="14" style="text-align:center;padding:1.5rem;color:var(--LT)">無符合條件的記錄</td></tr>'; }
+  else {
+    tb.innerHTML = data.map(o => {
+      const active = o.kpis.filter(k => k.name);
+      const scored = active.filter(k => k.score !== '' && k.score !== null).length;
+      const doneBadge = kpiIsDone(o) ? '<span class="bge b-g">已完成</span>' : '<span class="bge b-a">待評分</span>';
+      return `<tr>
+        <td>${d(o.bu)}</td><td>${d(o.dept)}</td><td>${d(o.job)}</td><td>${d(o.id)}</td><td style="font-weight:500">${d(o.name)}</td>
+        <td>${Number(o.base).toLocaleString()}</td>
+        <td>${scored}/${active.length} ${doneBadge}</td>
+        <td>${o.total === '' ? '—' : o.total}</td><td>${numOrDash(o.bonus)}</td>
+        <td>${numOrDash(o.chargebackDeduct)}</td><td>${numOrDash(o.arDeduct)}</td><td>${numOrDash(o.loanDeduct)}</td>
+        <td style="font-weight:600;color:var(--R)">${numOrDash(o.actualBonus)}</td>
+        <td class="actions">
+          <button class="btn btn-sm" onclick="openKPIEdit('${o.id}')">編輯</button>
+          <button class="btn btn-sm" onclick="deleteKPIRow('${o.id}','${o.name}')">刪除</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+  document.querySelectorAll('#tab-kp .sort-ind').forEach(el => {
+    const col = el.dataset.col;
+    const active = KPI_SORT.col === col;
+    el.textContent = active ? (KPI_SORT.dir === 1 ? '▲' : '▼') : '⇅';
+    el.classList.toggle('active', active);
+  });
+}
+let EDIT_KPI_STAFF = null; // 目前 KPI 編輯視窗開啟中的員工物件（深複製，供即時試算用）
+
+function openKPIEdit(id) {
+  const o = KPI_LIST.find(x => String(x.id) === String(id));
+  if (!o) return;
+  EDIT_KPI_ID = id;
+  EDIT_KPI_STAFF = JSON.parse(JSON.stringify(o));
+  document.getElementById('km-name').textContent = o.name + '（' + o.id + '）';
+  document.getElementById('km-meta').textContent = o.bu + ' · ' + o.dept + ' · ' + o.job;
+  document.getElementById('km-base').value = o.base;
+  document.getElementById('km-comment').textContent = o.comment || '（無）';
+  document.getElementById('km-deduct-chargeback').value = o.chargebackDeduct === '' || o.chargebackDeduct === undefined ? 0 : o.chargebackDeduct;
+  document.getElementById('km-deduct-ar').value = o.arDeduct === '' || o.arDeduct === undefined ? 0 : o.arDeduct;
+  document.getElementById('km-deduct-loan').value = o.loanDeduct === '' || o.loanDeduct === undefined ? 0 : o.loanDeduct;
+  renderAdminKpiRows();
+  updateAdminSummary();
+  openM('m-kpi');
+}
+function renderAdminKpiRows() {
+  document.getElementById('km-kpis').innerHTML = EDIT_KPI_STAFF.kpis.filter(k => k.name).map(k => {
+    const isHr = k.rater === '人資';
+    const scoreField = isHr
+      ? `<div class="kpi-score-box"><label>評分（0~${k.cap}）</label><input type="number" min="0" max="${k.cap}" value="${k.score === '' ? '' : k.score}" data-idx="${k.idx}" oninput="onAdminScoreInput(${k.idx})"></div>`
+      : `<div><label>評分</label><div class="readonly-val">${k.score === '' ? '尚未評分' : k.score}</div></div>`;
+    return `<div class="kpi-row ${isHr ? 'editable' : ''}" id="admin-kpi-row-${k.idx}">
+      <div class="kpi-row-hd">
+        <span class="kpi-row-name"><span class="kpi-idx">KPI ${k.idx + 1}</span>${k.name}</span>
+        <div class="kpi-row-meta">
+          <span class="bge b-b">權重 ${k.weight}%</span>
+          <span class="bge b-gr">評分上限 ${k.cap}</span>
+          <span class="bge ${isHr ? 'b-r' : 'b-gr'}">評分者：${k.rater || '—'}</span>
+        </div>
+      </div>
+      <div class="kpi-row-body">
+        ${scoreField}
+        <div>加權分數：<span class="kpi-weighted" id="admin-kpi-w-${k.idx}">${k.weighted === '' ? '—' : k.weighted}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function onAdminScoreInput(idx) {
+  const input = document.querySelector(`#admin-kpi-row-${idx} input[type=number]`);
+  const k = EDIT_KPI_STAFF.kpis.find(x => x.idx === idx);
+  let v = input.value === '' ? '' : Number(input.value);
+  if (v !== '' && v > k.cap) { v = k.cap; input.value = v; }
+  if (v !== '' && v < 0) { v = 0; input.value = v; }
+  k.score = v;
+  k.weighted = v === '' ? '' : Math.round(v * k.weight / 100 * 10) / 10;
+  document.getElementById('admin-kpi-w-' + idx).textContent = k.weighted === '' ? '—' : k.weighted;
+  updateAdminSummary();
+}
+function updateAdminSummary() {
+  const active = EDIT_KPI_STAFF.kpis.filter(k => k.name);
+  const total = active.reduce((s, k) => s + (k.weighted === '' ? 0 : Number(k.weighted)), 0);
+  const baseVal = Number(document.getElementById('km-base').value) || 0;
+  const bonusEst = Math.round(baseVal * total / 100);
+  const chargeback = Number(document.getElementById('km-deduct-chargeback').value) || 0;
+  const ar = Number(document.getElementById('km-deduct-ar').value) || 0;
+  const loan = Number(document.getElementById('km-deduct-loan').value) || 0;
+  const bonusActual = Math.round(bonusEst + chargeback + ar + loan);
+  document.getElementById('km-total').textContent = Math.round(total * 10) / 10;
+  document.getElementById('km-bonus-est').textContent = money(bonusEst);
+  document.getElementById('km-bonus-actual').textContent = money(bonusActual);
+}
+async function saveKPIConfig() {
+  const row = {
+    bu: EDIT_KPI_STAFF.bu, dept: EDIT_KPI_STAFF.dept, job: EDIT_KPI_STAFF.job,
+    id: EDIT_KPI_STAFF.id, name: EDIT_KPI_STAFF.name,
+    base: Number(document.getElementById('km-base').value) || 0,
+    chargebackDeduct: Number(document.getElementById('km-deduct-chargeback').value) || 0,
+    arDeduct: Number(document.getElementById('km-deduct-ar').value) || 0,
+    loanDeduct: Number(document.getElementById('km-deduct-loan').value) || 0,
+    kpis: EDIT_KPI_STAFF.kpis.map(k => {
+      const obj = { name: k.name, weight: k.weight, cap: k.cap, rater: k.rater };
+      if (k.rater === '人資') obj.score = k.score;
+      return obj;
+    }),
+  };
+  load(true, '儲存中...');
+  const res = await POST({ action: 'saveKPIConfig', row, by: CU.id });
+  load(false);
+  if (!res.ok) { toast('錯誤：' + res.err); return; }
+  const i = KPI_LIST.findIndex(x => String(x.id) === String(row.id));
+  if (i >= 0) KPI_LIST[i] = res.data;
+  closeM('m-kpi'); renderKPIList(); toast('已儲存');
+}
+async function deleteKPIRow(id, name) {
+  if (!confirm('確定要刪除「' + name + '（' + id + '）」的 KPI 設定？\n此操作無法復原。')) return;
+  load(true, '刪除中...');
+  const res = await POST({ action: 'deleteKPIRow', id, by: CU.id });
+  load(false);
+  if (!res.ok) { toast('錯誤：' + res.err); return; }
+  KPI_LIST = KPI_LIST.filter(x => String(x.id) !== String(id));
+  renderKPIList(); toast('已刪除');
+}
+
+// ── 管理員設定 ──
+function renderAdmins() {
+  document.getElementById('adlist').innerHTML = ADMINS.map((u, i) => {
+    const self = CU && String(u.id).toLowerCase() === String(CU.id).toLowerCase();
+    const delBtn = self ? '<span style="font-size:11px;color:var(--M);padding:0 4px">（本人）</span>'
+      : `<button onclick="delAdmin('${u.id}','${u.name}')" style="background:none;border:.5px solid var(--RB);border-radius:6px;padding:4px 8px;cursor:pointer;color:var(--RT);font-size:11px;font-family:inherit">刪除</button>`;
+    return `<div style="display:flex;align-items:center;gap:11px;padding:10px 14px;${i > 0 ? 'border-top:.5px solid var(--G3)' : ''}${i % 2 ? ';background:#FFF8F8' : ''}">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--R);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-size:13px;font-weight:600;color:#fff">${(u.name || '?')[0]}</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <p style="font-size:13px;font-weight:500;margin:0">${u.name} <span style="font-size:11px;color:#999;font-weight:400">(${u.id} / ${u.account})</span></p>
+        <p style="font-size:11px;color:var(--M);margin:0">${u.email}</p>
+      </div>
+      <span class="bge b-r">${u.role}</span>
+      ${delBtn}
+    </div>`;
+  }).join('') || '<p style="padding:1rem;color:var(--LT);font-size:12px">尚無資料</p>';
+}
+async function addAdmin() {
+  const id = document.getElementById('na-id').value.trim();
+  const nm = document.getElementById('na-nm').value.trim();
+  const acc = document.getElementById('na-acc').value.trim();
+  const em = document.getElementById('na-em').value.trim();
+  const pw = document.getElementById('na-pw').value;
+  const role = document.getElementById('na-role').value.trim() || '管理員';
+  if (!id || !nm || !acc || !pw) { toast('請填寫必要欄位'); return; }
+  load(true, '新增中...');
+  const res = await POST({ action: 'addAdmin', id, name: nm, account: acc, email: em, pw, role, by: CU.id });
+  load(false);
+  if (!res.ok) { toast('錯誤：' + res.err); return; }
+  ADMINS.push({ id, name: nm, account: acc, email: em, role });
+  ['na-id', 'na-nm', 'na-acc', 'na-em', 'na-pw'].forEach(k => document.getElementById(k).value = '');
+  document.getElementById('na-role').value = '管理員';
+  renderAdmins(); toast('管理員已新增');
+}
+async function delAdmin(id, name) {
+  if (!confirm('確定要刪除管理員「' + name + '（' + id + '）」？')) return;
+  load(true, '刪除中...');
+  const res = await POST({ action: 'deleteAdmin', id, by: CU.id });
+  load(false);
+  if (!res.ok) { toast('錯誤：' + res.err); return; }
+  ADMINS = ADMINS.filter(u => u.id !== id); renderAdmins(); toast('已刪除');
+}
+
+// ── 主管設定 ──
+function renderManagers() {
+  const tb = document.getElementById('mglist');
+  tb.innerHTML = MANAGERS.map(m => `<tr>
+    <td>${d(m.bu)}</td><td>${d(m.dept)}</td><td>${d(m.name)}</td><td>${d(m.id)}</td><td>${d(m.scope)}</td>
+    <td><button class="btn btn-sm" onclick="delManager('${m.id}','${m.name}')">刪除</button></td>
+  </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;padding:1rem;color:var(--LT)">尚無資料</td></tr>';
+}
+async function saveManagerForm() {
+  const row = {
+    bu: document.getElementById('nm-bu').value.trim(), dept: document.getElementById('nm-dept').value.trim(),
+    name: document.getElementById('nm-nm').value.trim(), id: document.getElementById('nm-id').value.trim(),
+    scope: document.getElementById('nm-scope').value.trim(), pw: document.getElementById('nm-pw').value,
+  };
+  if (!row.id || !row.name) { toast('請填寫工號與姓名'); return; }
+  load(true, '儲存中...');
+  const res = await POST({ action: 'saveManager', row, by: CU.id });
+  load(false);
+  if (!res.ok) { toast('錯誤：' + res.err); return; }
+  MANAGERS = MANAGERS.filter(m => m.id !== row.id);
+  MANAGERS.push({ bu: row.bu, dept: row.dept, name: row.name, id: row.id, scope: row.scope });
+  ['nm-bu', 'nm-dept', 'nm-nm', 'nm-id', 'nm-scope', 'nm-pw'].forEach(k => document.getElementById(k).value = '');
+  renderManagers(); toast('主管已儲存');
+}
+async function delManager(id, name) {
+  if (!confirm('確定要刪除主管「' + name + '（' + id + '）」？')) return;
+  load(true, '刪除中...');
+  const res = await POST({ action: 'deleteManager', id, by: CU.id });
+  load(false);
+  if (!res.ok) { toast('錯誤：' + res.err); return; }
+  MANAGERS = MANAGERS.filter(m => m.id !== id); renderManagers(); toast('已刪除');
+}
+
+// ── 員工設定 ──
+function renderStaffDir() {
+  const tb = document.getElementById('sflist');
+  tb.innerHTML = STAFF_DIR.map(s => `<tr>
+    <td>${d(s.bu)}</td><td>${d(s.dept)}</td><td>${d(s.name)}</td><td>${d(s.id)}</td><td>${d(s.email)}</td>
+    <td><button class="btn btn-sm" onclick="delStaff('${s.id}','${s.name}')">刪除</button></td>
+  </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;padding:1rem;color:var(--LT)">尚無資料</td></tr>';
+}
+async function saveStaffForm() {
+  const row = {
+    bu: document.getElementById('ns-bu').value.trim(), dept: document.getElementById('ns-dept').value.trim(),
+    name: document.getElementById('ns-nm').value.trim(), id: document.getElementById('ns-id').value.trim(),
+    email: document.getElementById('ns-em').value.trim(),
+  };
+  if (!row.id || !row.name) { toast('請填寫工號與姓名'); return; }
+  load(true, '儲存中...');
+  const res = await POST({ action: 'saveStaff', row, by: CU.id });
+  load(false);
+  if (!res.ok) { toast('錯誤：' + res.err); return; }
+  STAFF_DIR = STAFF_DIR.filter(s => s.id !== row.id);
+  STAFF_DIR.push(row);
+  ['ns-bu', 'ns-dept', 'ns-nm', 'ns-id', 'ns-em'].forEach(k => document.getElementById(k).value = '');
+  renderStaffDir(); toast('已儲存'); updateNtPreview();
+}
+async function delStaff(id, name) {
+  if (!confirm('確定要刪除員工資料「' + name + '（' + id + '）」？')) return;
+  load(true, '刪除中...');
+  const res = await POST({ action: 'deleteStaff', id, by: CU.id });
+  load(false);
+  if (!res.ok) { toast('錯誤：' + res.err); return; }
+  STAFF_DIR = STAFF_DIR.filter(s => s.id !== id); renderStaffDir(); toast('已刪除'); updateNtPreview();
+}
+
+// ── 批次上傳（SheetJS）──
+function readWorkbookFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array' });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        resolve(XLSX.utils.sheet_to_json(sheet, { defval: '' }));
+      } catch (err) { reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+function mapUploadRow(kind, o) {
+  const g = k => (o[k] !== undefined ? String(o[k]).trim() : '');
+  if (kind === 'kpi') {
+    if (!g('工號')) return null;
+    return {
+      bu: g('事業部'), dept: g('部門'), job: g('職類'), id: g('工號'), name: g('姓名'), base: Number(o['獎金基數']) || 0,
+      kpis: [1, 2, 3, 4, 5, 6].map(i => ({
+        name: g('KPI' + i + '名稱'), weight: o['KPI' + i + '權重'] === '' ? '' : Number(o['KPI' + i + '權重']),
+        cap: o['KPI' + i + '上限'] === '' ? '' : Number(o['KPI' + i + '上限']), rater: g('KPI' + i + '評分者'),
+      })),
+    };
+  }
+  if (kind === 'manager') {
+    if (!g('工號')) return null;
+    return { bu: g('事業部'), dept: g('部門'), name: g('姓名'), id: g('工號'), pw: g('密碼'), scope: g('責任部門') };
+  }
+  if (kind === 'staff') {
+    if (!g('工號')) return null;
+    return { bu: g('事業部'), dept: g('部門'), name: g('姓名'), id: g('工號'), email: g('email') || g('Email') };
+  }
+  return null;
+}
+async function handleUpload(inp, kind) {
+  const file = inp.files[0];
+  if (!file) return;
+  document.getElementById(kind + '-up-nm').textContent = '已選取：' + file.name;
+  document.getElementById(kind + '-up-nm').style.display = 'block';
+  try {
+    const raw = await readWorkbookFile(file);
+    const rows = raw.map(o => mapUploadRow(kind, o)).filter(Boolean);
+    UPLOAD_ROWS[kind] = rows;
+    document.getElementById(kind + '-up-preview').style.display = 'block';
+    document.getElementById(kind + '-up-preview').textContent = '解析完成，共 ' + rows.length + ' 筆有效資料（缺少工號的列已略過）。';
+    document.getElementById(kind + '-up-confirm').style.display = rows.length ? 'inline-flex' : 'none';
+  } catch (e) {
+    toast('檔案解析失敗：' + e.message);
+  }
+}
+async function confirmUpload(kind) {
+  const rows = UPLOAD_ROWS[kind];
+  if (!rows || !rows.length) return;
+  const actionMap = { kpi: 'bulkKPI', manager: 'bulkManagers', staff: 'bulkStaff' };
+  load(true, '匯入中...');
+  const res = await POST({ action: actionMap[kind], rows, by: CU.id });
+  load(false);
+  if (!res.ok) { toast('匯入失敗：' + res.err); return; }
+  toast(`匯入完成：新增 ${res.added} 筆，更新 ${res.updated} 筆`);
+  UPLOAD_ROWS[kind] = [];
+  document.getElementById(kind + '-up-confirm').style.display = 'none';
+  await reloadAdmin();
+}
+
+// ── 通知設定 ──
+let NT_SCOPE = 'ALL';
+function selNtScope(btn, v) {
+  NT_SCOPE = v;
+  document.querySelectorAll('.on-nt-scope').forEach(b => b.classList.remove('btn-r'));
+  btn.classList.add('btn-r');
+  const row = document.getElementById('nt-value-row');
+  row.style.display = v === 'ALL' ? 'none' : 'block';
+  document.getElementById('nt-value-lbl').textContent = v === 'BU' ? '請勾選事業部（可多選）' : '請勾選部門（可多選）';
+  if (v !== 'ALL') renderNtValueChecks(v);
+  updateNtPreview();
+}
+function renderNtValueChecks(v) {
+  const field = v === 'BU' ? 'bu' : 'dept';
+  const values = [...new Set(KPI_LIST.map(o => o[field]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+  const container = document.getElementById('nt-value-checks');
+  container.innerHTML = values.length
+    ? values.map(val => `<label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:400;color:var(--T);cursor:pointer">
+        <input type="checkbox" value="${val}" style="width:auto" onchange="updateNtPreview()">${val}
+      </label>`).join('')
+    : '<span style="font-size:12px;color:var(--LT)">目前 KPI 清單中沒有可選項目</span>';
+}
+function getNtSelectedValues() {
+  return [...document.querySelectorAll('#nt-value-checks input:checked')].map(cb => cb.value);
+}
+function updateNtPreview() {
+  const selectedValues = getNtSelectedValues();
+  // 比對邏輯需與後端 apiSendBonusNotification 完全一致：工號比對（大小寫不敏感），對不到再用姓名比對備援
+  const emailByIdLower = {}, emailByNameLower = {};
+  STAFF_DIR.forEach(s => {
+    if (s.id) emailByIdLower[s.id.toLowerCase()] = s.email;
+    if (s.name) emailByNameLower[s.name.toLowerCase()] = s.email;
+  });
+  const data = KPI_LIST.filter(o => {
+    if (NT_SCOPE === 'BU') return selectedValues.includes(o.bu);
+    if (NT_SCOPE === 'DEPT') return selectedValues.includes(o.dept);
+    return true;
+  });
+  const getEmail = o => emailByIdLower[String(o.id).toLowerCase()] || emailByNameLower[String(o.name).toLowerCase()] || '';
+  // 未完成評分的人一律略過（不寄送），所以「查無Email」只統計「已完成評分、但沒有Email」的人，避免同一人被算兩次
+  const doneList = data.filter(o => kpiIsDone(o));
+  const notDoneCount = data.length - doneList.length;
+  const willSendList = doneList.filter(o => getEmail(o));
+  const noEmailCount = doneList.length - willSendList.length;
+
+  document.getElementById('nt-cnt').textContent = data.length;
+  document.getElementById('nt-notdone').textContent = notDoneCount;
+  document.getElementById('nt-noemail').textContent = noEmailCount;
+  document.getElementById('nt-willsend').textContent = willSendList.length;
+
+  const card = document.getElementById('nt-willsend-card');
+  const tbody = document.getElementById('nt-willsend-body');
+  document.getElementById('nt-action-th').textContent = NT_INDIVIDUAL_MODE ? '操作' : '';
+  if (willSendList.length) {
+    card.style.display = 'block';
+    tbody.innerHTML = willSendList.map(o => `<tr>
+      <td>${d(o.id)}</td><td style="font-weight:500">${d(o.name)}</td><td>${d(o.bu)}</td><td>${d(o.dept)}</td><td>${d(getEmail(o))}</td>
+      ${NT_INDIVIDUAL_MODE ? `<td><button class="btn btn-sm" onclick="sendIndividualBonus('${o.id}','${o.name}')">發送</button></td>` : '<td></td>'}
+    </tr>`).join('');
+  } else {
+    card.style.display = 'none';
+    tbody.innerHTML = '';
+  }
+}
+let NT_INDIVIDUAL_MODE = false;
+function toggleIndividualSend(btn) {
+  NT_INDIVIDUAL_MODE = !NT_INDIVIDUAL_MODE;
+  btn.classList.toggle('btn-r', NT_INDIVIDUAL_MODE);
+  updateNtPreview();
+}
+async function sendIndividualBonus(id, name) {
+  if (!confirm(`確定要寄送績效獎金通知給「${name}（${id}）」嗎？此操作會立即寄出 Email。`)) return;
+  load(true, '發送中...');
+  const res = await POST({ action: 'sendBonusNotification', staffId: id, by: CU.id });
+  load(false);
+  if (!res.ok) { toast('發送失敗：' + res.err); return; }
+  toast(res.sent ? `已寄送給 ${name}` : `未寄送：${res.skipped[0] || '請確認評分與Email'}`);
+}
+async function sendBonusNotification() {
+  const selectedValues = getNtSelectedValues();
+  if (NT_SCOPE !== 'ALL' && !selectedValues.length) { toast('請至少勾選一個項目'); return; }
+  if (!confirm('確定要發送績效獎金通知信件嗎？此操作會立即寄出 Email。')) return;
+  load(true, '發送中...');
+  const res = await POST({ action: 'sendBonusNotification', filter: { scope: NT_SCOPE, value: selectedValues }, by: CU.id });
+  load(false);
+  if (!res.ok) { toast('發送失敗：' + res.err); return; }
+  toast(`已發送 ${res.sent} 封` + (res.skipped.length ? `，略過 ${res.skipped.length} 人` : ''));
+}
+</script>
+</body>
+</html>
