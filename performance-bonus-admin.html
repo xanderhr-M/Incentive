@@ -361,7 +361,7 @@ tr:nth-child(even) td{background:#FFF8F8}
             <div><label>姓名</label><input id="nm-nm"></div>
             <div><label>工號</label><input id="nm-id"></div>
             <div><label>責任部門</label><input id="nm-scope" placeholder="員工的「部門」；填「XX事業部」看整個事業部；填「全部門」看全公司"></div>
-            <div><label>密碼（留空預設同工號）</label><input id="nm-pw" type="password"></div>
+            <div><label>密碼</label><input id="nm-pw" type="password"></div>
           </div>
           <button class="btn btn-r" onclick="saveManagerForm()">新增主管</button>
         </div>
@@ -388,7 +388,7 @@ tr:nth-child(even) td{background:#FFF8F8}
               <div class="fitem">工號</div><div class="fitem">密碼</div><div class="fitem">責任部門</div>
             </div>
           </div>
-          <div class="ibox">工號已存在時更新資料；新主管若密碼欄空白，預設密碼為工號。</div>
+          <div class="ibox">工號已存在時更新資料。</div>
           <div class="ibox" id="manager-up-preview" style="display:none"></div>
           <button class="btn btn-r" id="manager-up-confirm" style="display:none" onclick="confirmUpload('manager')">確認匯入</button>
         </div>
@@ -495,7 +495,18 @@ tr:nth-child(even) td{background:#FFF8F8}
     <div class="tpanel" id="tab-ex">
       <div class="card" style="padding:1.4rem;max-width:520px">
         <div class="mttl" style="margin-bottom:1rem">匯出績效獎金試算表</div>
-        <p style="font-size:12px;color:var(--M);margin-bottom:1rem">匯出目前 KPI 清單中「已完成全部考核」的員工資料，欄位包含：BU事業部／部門／員工編號／員工姓名／績效考核分數／主管總評／實發獎金金額。尚未完成考核的員工不會匯出。</p>
+        <p style="font-size:12px;color:var(--M);margin-bottom:1rem">匯出「已完成全部考核」的員工資料，欄位包含：BU事業部／部門／員工編號／員工姓名／獎金基數／績效總分／績效獎金預估／倒帳扣款／逾期AR扣款／逾期借用扣款／實發獎金金額／主管總評。尚未完成考核的員工不會匯出。</p>
+        <div class="frow"><label>匯出範圍</label>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <button class="btn btn-r on-ex-scope" onclick="selExScope(this,'ALL')">全部員工</button>
+            <button class="btn on-ex-scope" onclick="selExScope(this,'BU')">依事業部</button>
+            <button class="btn on-ex-scope" onclick="selExScope(this,'DEPT')">依部門</button>
+          </div>
+        </div>
+        <div class="frow" id="ex-value-row" style="display:none">
+          <label id="ex-value-lbl">請勾選事業部（可多選）</label>
+          <div id="ex-value-checks" style="display:flex;gap:14px;flex-wrap:wrap"></div>
+        </div>
         <div class="ibox">將匯出 <strong id="ex-cnt">0</strong> 筆資料（已排除尚未完成考核的員工）</div>
         <button class="btn btn-r" onclick="exportKPIExcel()">匯出試算表</button>
       </div>
@@ -678,9 +689,7 @@ async function initAdmin() {
     if (qt.ok) renderQuarterSetting(qt.data);
   } catch (e) { load(false); toast('網路錯誤：' + e.message); return; }
   load(false);
-  renderKPIList(); renderAdmins(); renderManagers(); renderStaffDir(); updateNtPreview();
-  const exCntEl = document.getElementById('ex-cnt');
-  if (exCntEl) exCntEl.textContent = KPI_LIST.filter(kpiIsDone).length;
+  renderKPIList(); renderAdmins(); renderManagers(); renderStaffDir(); updateNtPreview(); updateExPreview();
 }
 async function reloadAdmin() { await initAdmin(); toast('資料已重新載入'); }
 function renderQuarterSetting(d) {
@@ -712,22 +721,64 @@ async function refreshKPIList() {
   if (!res.ok) { toast('更新失敗：' + res.err); return; }
   KPI_LIST = res.data;
   renderKPIList();
-  const exCntEl = document.getElementById('ex-cnt');
-  if (exCntEl) exCntEl.textContent = KPI_LIST.filter(kpiIsDone).length;
+  updateExPreview();
   toast('KPI 資料已更新');
 }
+// ── 檔案匯出 ──
+let EX_SCOPE = 'ALL';
+function selExScope(btn, v) {
+  EX_SCOPE = v;
+  document.querySelectorAll('.on-ex-scope').forEach(b => b.classList.remove('btn-r'));
+  btn.classList.add('btn-r');
+  const row = document.getElementById('ex-value-row');
+  row.style.display = v === 'ALL' ? 'none' : 'block';
+  document.getElementById('ex-value-lbl').textContent = v === 'BU' ? '請勾選事業部（可多選）' : '請勾選部門（可多選）';
+  if (v !== 'ALL') renderExValueChecks(v);
+  updateExPreview();
+}
+function renderExValueChecks(v) {
+  const field = v === 'BU' ? 'bu' : 'dept';
+  const values = [...new Set(KPI_LIST.map(o => o[field]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+  const container = document.getElementById('ex-value-checks');
+  container.innerHTML = values.length
+    ? values.map(val => `<label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:400;color:var(--T);cursor:pointer">
+        <input type="checkbox" value="${val}" style="width:auto" onchange="updateExPreview()">${val}
+      </label>`).join('')
+    : '<span style="font-size:12px;color:var(--LT)">目前 KPI 清單中沒有可選項目</span>';
+}
+function getExSelectedValues() {
+  return [...document.querySelectorAll('#ex-value-checks input:checked')].map(cb => cb.value);
+}
+function getExFilteredList() {
+  const selectedValues = getExSelectedValues();
+  return KPI_LIST.filter(o => {
+    if (EX_SCOPE === 'BU') return selectedValues.includes(o.bu);
+    if (EX_SCOPE === 'DEPT') return selectedValues.includes(o.dept);
+    return true;
+  }).filter(kpiIsDone);
+}
+function updateExPreview() {
+  const exCntEl = document.getElementById('ex-cnt');
+  if (exCntEl) exCntEl.textContent = getExFilteredList().length;
+}
 function exportKPIExcel() {
-  const doneList = KPI_LIST.filter(kpiIsDone);
+  const doneList = getExFilteredList();
   if (!doneList.length) { toast('目前沒有已完成考核的資料可匯出'); return; }
-  const headers = ['BU事業部', '部門', '員工編號', '員工姓名', '績效考核分數', '主管總評', '實發獎金金額'];
+  const headers = ['BU事業部', '部門', '員工編號', '員工姓名', '獎金基數', '績效總分', '績效獎金預估', '倒帳扣款', '逾期AR扣款', '逾期借用扣款', '實發獎金金額', '主管總評'];
+  const num = v => (v === '' || v === undefined || v === null ? '' : v);
   const rows = doneList.map(o => [
     o.bu,
     o.dept,
     o.id,
     o.name,
-    o.total === '' || o.total === undefined ? '' : o.total,
+    num(o.base),
+    num(o.total),
+    num(o.bonus),
+    num(o.chargebackDeduct),
+    num(o.arDeduct),
+    num(o.loanDeduct),
+    num(o.actualBonus),
     o.comment || '',
-    o.actualBonus === '' || o.actualBonus === undefined ? '' : o.actualBonus,
   ]);
 
   const FONT = '微軟正黑體';
@@ -738,8 +789,9 @@ function exportKPIExcel() {
     fill: { patternType: 'solid', fgColor: { rgb: 'C0111A' } },
     alignment: { horizontal: 'center', vertical: 'center' },
   };
-  const COMMENT_COL = 5;
-  const BONUS_COL = 6;
+  const SCORE_COL = 5;
+  const MONEY_COLS = [4, 6, 7, 8, 9, 10]; // 獎金基數／績效獎金預估／倒帳扣款／逾期AR扣款／逾期借用扣款／實發獎金金額
+  const COMMENT_COL = 11;
 
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
   const range = XLSX.utils.decode_range(ws['!ref']);
@@ -748,10 +800,11 @@ function exportKPIExcel() {
       const addr = XLSX.utils.encode_cell({ r, c });
       if (!ws[addr]) ws[addr] = { t: 's', v: '' };
       ws[addr].s = r === 0 ? headerStyle : (c === COMMENT_COL ? leftFont : centerFont);
-      if (r > 0 && c === BONUS_COL) ws[addr].z = '#,##0';
+      if (r > 0 && c === SCORE_COL) ws[addr].z = '0.00';
+      if (r > 0 && MONEY_COLS.includes(c)) ws[addr].z = '#,##0';
     }
   }
-  ws['!cols'] = [{ wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 30 }, { wch: 12 }];
+  ws['!cols'] = [{ wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 30 }];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '績效獎金匯出');
