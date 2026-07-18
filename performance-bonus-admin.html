@@ -227,14 +227,14 @@ tr:nth-child(even) td{background:#FFF8F8}
   </div>
   <nav class="anav">
     <button class="tbtn on" onclick="goTab('ov',this)"><span>數據總覽</span></button>
-    <button class="tbtn"    onclick="goTab('qt',this)"><span>季度設定</span></button>
     <button class="tbtn"    onclick="goTab('kp',this)"><span>KPI清單</span></button>
-    <button class="tbtn"    onclick="goTab('ad',this)"><span>管理員設定</span></button>
+    <button class="tbtn"    onclick="goTab('nt',this)"><span>發送通知</span></button>
+    <button class="tbtn"    onclick="goTab('ex',this)"><span>檔案匯出</span></button>
+    <button class="tbtn"    onclick="goTab('qt',this)"><span>季度設定</span></button>
     <button class="tbtn"    onclick="goTab('mg',this)"><span>主管設定</span></button>
     <button class="tbtn"    onclick="goTab('sf',this)"><span>員工設定</span></button>
-    <button class="tbtn"    onclick="goTab('nt',this)"><span>通知設定</span></button>
+    <button class="tbtn"    onclick="goTab('ad',this)"><span>管理員設定</span></button>
     <button class="tbtn"    onclick="goTab('sy',this)"><span>系統設定</span></button>
-    <button class="tbtn"    onclick="goTab('ex',this)"><span>檔案匯出</span></button>
   </nav>
   <div class="content">
 
@@ -333,12 +333,10 @@ tr:nth-child(even) td{background:#FFF8F8}
       <div class="card" style="padding:1.25rem;margin-bottom:1rem">
         <div class="mttl" style="margin-bottom:.9rem">新增管理員帳號</div>
         <div class="fg2">
-          <div><label>ID</label><input id="na-id" placeholder="如：A002"></div>
           <div><label>姓名</label><input id="na-nm"></div>
           <div><label>登入帳號</label><input id="na-acc"></div>
           <div><label>Email</label><input id="na-em" type="email"></div>
           <div><label>初始密碼</label><input id="na-pw" type="password"></div>
-          <div><label>角色</label><input id="na-role" value="管理員"></div>
         </div>
         <button class="btn btn-r" onclick="addAdmin()">新增帳號</button>
       </div>
@@ -517,6 +515,23 @@ tr:nth-child(even) td{background:#FFF8F8}
     <div class="mft">
       <button class="btn" onclick="closeM('m-pw')">取消</button>
       <button class="btn btn-r" onclick="doChangePw()">確認修改</button>
+    </div>
+  </div>
+</div>
+
+<div class="mover" id="m-me" style="display:none" onclick="if(event.target===this)closeM('m-me')">
+  <div class="modal msm">
+    <div class="mttl">編輯我的資料</div>
+    <div class="frow"><label>姓名</label><input id="me-nm"></div>
+    <div class="frow"><label>登入帳號</label><input id="me-acc"></div>
+    <div class="frow"><label>Email</label><input id="me-em" type="email"></div>
+    <div class="frow"><label>目前密碼</label><input type="password" id="me-curpw"></div>
+    <div class="frow"><label>新密碼（選填，至少4位）</label><input type="password" id="me-newpw"></div>
+    <div class="frow"><label>確認新密碼</label><input type="password" id="me-newpw-cf"></div>
+    <div id="me-err" style="display:none;color:var(--R);font-size:12px;margin-bottom:.75rem;padding:7px 11px;background:var(--RP);border-radius:7px"></div>
+    <div class="mft">
+      <button class="btn" onclick="closeM('m-me')">取消</button>
+      <button class="btn btn-r" onclick="saveEditMe()">確認修改</button>
     </div>
   </div>
 </div>
@@ -957,46 +972,68 @@ async function deleteKPIRow(id, name) {
 // ── 管理員設定 ──
 function renderAdmins() {
   document.getElementById('adlist').innerHTML = ADMINS.map((u, i) => {
-    const self = CU && String(u.id).toLowerCase() === String(CU.id).toLowerCase();
-    const delBtn = self ? '<span style="font-size:11px;color:var(--M);padding:0 4px">（本人）</span>'
-      : `<button onclick="delAdmin('${u.id}','${u.name}')" style="background:none;border:.5px solid var(--RB);border-radius:6px;padding:4px 8px;cursor:pointer;color:var(--RT);font-size:11px;font-family:inherit">刪除</button>`;
+    const self = CU && String(u.account).toLowerCase() === String(CU.id).toLowerCase();
+    const rightBtn = self
+      ? `<button onclick="openEditMe()" style="background:none;border:.5px solid var(--RB);border-radius:6px;padding:4px 8px;cursor:pointer;color:var(--RT);font-size:11px;font-family:inherit">編輯</button>`
+      : '';
     return `<div style="display:flex;align-items:center;gap:11px;padding:10px 14px;${i > 0 ? 'border-top:.5px solid var(--G3)' : ''}${i % 2 ? ';background:#FFF8F8' : ''}">
       <div style="width:32px;height:32px;border-radius:50%;background:var(--R);display:flex;align-items:center;justify-content:center;flex-shrink:0">
         <span style="font-size:13px;font-weight:600;color:#fff">${(u.name || '?')[0]}</span>
       </div>
       <div style="flex:1;min-width:0">
-        <p style="font-size:13px;font-weight:500;margin:0">${u.name} <span style="font-size:11px;color:#999;font-weight:400">(${u.id} / ${u.account})</span></p>
+        <p style="font-size:13px;font-weight:500;margin:0">${u.name} <span style="font-size:11px;color:#999;font-weight:400">(${u.account})</span>${self ? ' <span style="font-size:11px;color:var(--M)">（本人）</span>' : ''}</p>
         <p style="font-size:11px;color:var(--M);margin:0">${u.email}</p>
       </div>
-      <span class="bge b-r">${u.role}</span>
-      ${delBtn}
+      ${rightBtn}
     </div>`;
   }).join('') || '<p style="padding:1rem;color:var(--LT);font-size:12px">尚無資料</p>';
 }
+function openEditMe() {
+  const me = ADMINS.find(a => String(a.account).toLowerCase() === String(CU.id).toLowerCase());
+  document.getElementById('me-nm').value = (me ? me.name : CU.name) || '';
+  document.getElementById('me-acc').value = (me ? me.account : CU.id) || '';
+  document.getElementById('me-em').value = (me ? me.email : CU.email) || '';
+  ['me-curpw', 'me-newpw', 'me-newpw-cf'].forEach(k => document.getElementById(k).value = '');
+  document.getElementById('me-err').style.display = 'none';
+  openM('m-me');
+}
+async function saveEditMe() {
+  const name = document.getElementById('me-nm').value.trim();
+  const newAccount = document.getElementById('me-acc').value.trim();
+  const email = document.getElementById('me-em').value.trim();
+  const curPw = document.getElementById('me-curpw').value;
+  const newPw = document.getElementById('me-newpw').value;
+  const newPwCf = document.getElementById('me-newpw-cf').value;
+  const err = document.getElementById('me-err');
+  err.style.display = 'none';
+  if (!name || !newAccount) { err.textContent = '姓名與登入帳號不可為空'; err.style.display = 'block'; return; }
+  if (!curPw) { err.textContent = '請輸入目前密碼以確認身份'; err.style.display = 'block'; return; }
+  if (newPw && newPw.length < 4) { err.textContent = '新密碼至少需4個字元'; err.style.display = 'block'; return; }
+  if (newPw && newPw !== newPwCf) { err.textContent = '兩次輸入的新密碼不一致'; err.style.display = 'block'; return; }
+  load(true, '儲存中...');
+  const res = await POST({ action: 'updateOwnAdmin', account: CU.id, curPw, name, newAccount, email, pw: newPw });
+  load(false);
+  if (!res.ok) { err.textContent = res.err || '更新失敗'; err.style.display = 'block'; return; }
+  const me = ADMINS.find(a => String(a.account).toLowerCase() === String(CU.id).toLowerCase());
+  if (me) { me.name = name; me.account = newAccount; me.email = email; }
+  CU.id = newAccount; CU.account = newAccount; CU.name = name; CU.email = email;
+  closeM('m-me');
+  renderAdmins();
+  toast('資料已更新');
+}
 async function addAdmin() {
-  const id = document.getElementById('na-id').value.trim();
   const nm = document.getElementById('na-nm').value.trim();
   const acc = document.getElementById('na-acc').value.trim();
   const em = document.getElementById('na-em').value.trim();
   const pw = document.getElementById('na-pw').value;
-  const role = document.getElementById('na-role').value.trim() || '管理員';
-  if (!id || !nm || !acc || !pw) { toast('請填寫必要欄位'); return; }
+  if (!nm || !acc || !pw) { toast('請填寫必要欄位'); return; }
   load(true, '新增中...');
-  const res = await POST({ action: 'addAdmin', id, name: nm, account: acc, email: em, pw, role, by: CU.id });
+  const res = await POST({ action: 'addAdmin', name: nm, account: acc, email: em, pw, by: CU.id });
   load(false);
   if (!res.ok) { toast('錯誤：' + res.err); return; }
-  ADMINS.push({ id, name: nm, account: acc, email: em, role });
-  ['na-id', 'na-nm', 'na-acc', 'na-em', 'na-pw'].forEach(k => document.getElementById(k).value = '');
-  document.getElementById('na-role').value = '管理員';
+  ADMINS.push({ name: nm, account: acc, email: em });
+  ['na-nm', 'na-acc', 'na-em', 'na-pw'].forEach(k => document.getElementById(k).value = '');
   renderAdmins(); toast('管理員已新增');
-}
-async function delAdmin(id, name) {
-  if (!confirm('確定要刪除管理員「' + name + '（' + id + '）」？')) return;
-  load(true, '刪除中...');
-  const res = await POST({ action: 'deleteAdmin', id, by: CU.id });
-  load(false);
-  if (!res.ok) { toast('錯誤：' + res.err); return; }
-  ADMINS = ADMINS.filter(u => u.id !== id); renderAdmins(); toast('已刪除');
 }
 
 // ── 主管設定 ──
