@@ -185,6 +185,7 @@ tr:nth-child(even) td{background:#FFF8F8}
       <div class="stat"><div class="slbl">已完成評分</div><div class="sval" id="m-done">0</div></div>
       <div class="stat"><div class="slbl">待評分</div><div class="sval" id="m-pend">0</div></div>
     </div>
+    <div id="ro-banner" style="display:none;background:var(--RL);border:.5px solid var(--RB);color:var(--RT);padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:1.1rem">主管評分功能目前已關閉，僅能查看員工 KPI 資料，無法進行評分或修改。</div>
     <div class="filters">
       <input id="mf-q" placeholder="搜尋工號或姓名..." oninput="renderManagerList()">
       <select id="mf-s" onchange="renderManagerList()"><option>全部狀態</option><option>已完成</option><option>待評分</option></select>
@@ -239,10 +240,11 @@ tr:nth-child(even) td{background:#FFF8F8}
       <div class="summary-row big"><span>績效獎金預估 <span style="font-size:11px;font-weight:400;color:var(--M)">（尚未扣除相關扣款）</span></span><span id="ev-bonus">NT$ 0</span></div>
     </div>
     <div class="frow" style="margin-top:1rem"><label>主管總評</label><textarea id="ev-comment" placeholder="請填寫整體評語"></textarea></div>
+    <div id="ev-readonly-note" style="display:none;color:var(--RT);font-size:12px;margin-bottom:.5rem;padding:7px 11px;background:var(--RL);border:.5px solid var(--RB);border-radius:7px">主管評分功能目前已關閉，此頁僅供查看，無法儲存修改。</div>
     <div id="ev-err" style="display:none;color:var(--R);font-size:12px;margin-bottom:.5rem;padding:7px 11px;background:var(--RP);border-radius:7px"></div>
     <div class="mft">
       <button class="btn" onclick="closeM('m-eval')">取消</button>
-      <button class="btn btn-r" onclick="saveEvaluation()">儲存評分</button>
+      <button class="btn btn-r" id="ev-save-btn" onclick="saveEvaluation()">儲存評分</button>
     </div>
   </div>
 </div>
@@ -283,6 +285,7 @@ async function POST(body) {
 let CU = null;          // currentUser
 let STAFF_LIST = [];    // 責任部門員工
 let EDIT_STAFF = null;  // 目前評分視窗的員工物件
+let SCORING_ENABLED = true; // 主管評分功能是否開啟（管理後台可關閉，關閉時僅能查看）
 
 function pg(id) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('pg-' + id).classList.add('active'); }
 function openM(id) { document.getElementById(id).style.display = 'flex'; }
@@ -345,17 +348,21 @@ async function initManager() {
   document.getElementById('mname').textContent = CU.name;
   document.getElementById('mscope').textContent = '責任部門：' + CU.scope;
   load(true, '載入員工資料...');
-  let res, qt;
+  let res, qt, ss;
   try {
-    [res, qt] = await Promise.all([
+    [res, qt, ss] = await Promise.all([
       GET({ action: 'getManagerStaff', managerId: CU.id }),
       GET({ action: 'getQuarterSetting' }),
+      GET({ action: 'getSystemSettings' }),
     ]);
   } catch (e) { load(false); toast('網路錯誤：' + e.message); return; }
   load(false);
   if (res.ok) STAFF_LIST = res.data; else toast('載入失敗：' + (res.err || ''));
   const quarterEl = document.getElementById('m-quarter');
   if (quarterEl) quarterEl.textContent = (qt.ok && qt.data.year && qt.data.quarter) ? `${qt.data.year} 年第 ${qt.data.quarter} 季` : '尚未設定';
+  if (ss.ok) SCORING_ENABLED = ss.data.managerScoringEnabled;
+  const roBanner = document.getElementById('ro-banner');
+  if (roBanner) roBanner.style.display = SCORING_ENABLED ? 'none' : 'block';
   renderManagerList();
 }
 function staffIsDone(o) { return o.kpis.every(k => !k.name || (k.score !== '' && k.score !== null)); }
@@ -426,9 +433,13 @@ function openEval(id) {
   const o = STAFF_LIST.find(x => String(x.id) === String(id));
   if (!o) return;
   EDIT_STAFF = JSON.parse(JSON.stringify(o));
+  if (!SCORING_ENABLED) EDIT_STAFF.kpis.forEach(k => k.editable = false);
   document.getElementById('ev-name').textContent = o.name + '（' + o.id + '）';
   document.getElementById('ev-meta').innerHTML = o.bu + ' · ' + o.dept + ' · ' + o.job + ' · <span style="color:var(--R);font-weight:700">獎金基數 ' + Number(o.base).toLocaleString() + '</span>';
   document.getElementById('ev-comment').value = o.comment || '';
+  document.getElementById('ev-comment').disabled = !SCORING_ENABLED;
+  document.getElementById('ev-readonly-note').style.display = SCORING_ENABLED ? 'none' : 'block';
+  document.getElementById('ev-save-btn').style.display = SCORING_ENABLED ? 'inline-flex' : 'none';
   document.getElementById('ev-err').style.display = 'none';
   const box = document.getElementById('ev-kpis');
   box.innerHTML = EDIT_STAFF.kpis.filter(k => k.name).map(k => {

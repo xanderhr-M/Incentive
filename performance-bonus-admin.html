@@ -240,6 +240,13 @@ tr:nth-child(even) td{background:#FFF8F8}
 
     <!-- 數據總覽 -->
     <div class="tpanel on" id="tab-ov">
+      <div class="card" style="padding:1.1rem 1.25rem;margin-bottom:1.1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div>
+          <div class="mttl" style="margin-bottom:.3rem">主管評分功能</div>
+          <p style="font-size:12px;color:var(--M)">關閉後，主管登入「主管評核入口」僅能查看員工 KPI 資料，無法進行評分或修改。</p>
+        </div>
+        <button class="btn btn-r" id="scoring-toggle-btn" onclick="toggleManagerScoring()">載入中...</button>
+      </div>
       <div class="sgrid sgrid5" style="margin-bottom:1.1rem">
         <div class="stat"><div class="slbl">獎金計算季度</div><div class="sval" id="a-quarter" style="font-size:19px">—</div></div>
         <div class="stat acc"><div class="slbl">員工總筆數</div><div class="sval" id="a-tot">0</div></div>
@@ -612,6 +619,7 @@ async function POST(body) {
 let CU = null;
 let KPI_LIST = [];
 let ADMINS = [], MANAGERS = [], STAFF_DIR = [];
+let MANAGER_SCORING_ENABLED = true;
 let EDIT_KPI_ID = null;
 let UPLOAD_ROWS = { kpi: [], manager: [], staff: [] };
 
@@ -676,10 +684,10 @@ async function initAdmin() {
   try { await runSetupSheets(false); } catch (e) { /* 結構檢查失敗不中斷登入，稍後仍可手動重試 */ }
   load(true, '載入資料...');
   try {
-    const [ov, kp, ad, mg, sf, qt] = await Promise.all([
+    const [ov, kp, ad, mg, sf, qt, ss] = await Promise.all([
       GET({ action: 'getOverview' }), GET({ action: 'getKPIList' }),
       GET({ action: 'getAdmins' }), GET({ action: 'getManagers' }), GET({ action: 'getStaffDirectory' }),
-      GET({ action: 'getQuarterSetting' }),
+      GET({ action: 'getQuarterSetting' }), GET({ action: 'getSystemSettings' }),
     ]);
     if (ov.ok) renderOverview(ov.data); else toast('總覽載入失敗：' + ov.err);
     KPI_LIST = kp.ok ? kp.data : [];
@@ -687,9 +695,10 @@ async function initAdmin() {
     MANAGERS = mg.ok ? mg.data : [];
     STAFF_DIR = sf.ok ? sf.data : [];
     if (qt.ok) renderQuarterSetting(qt.data);
+    if (ss.ok) MANAGER_SCORING_ENABLED = ss.data.managerScoringEnabled;
   } catch (e) { load(false); toast('網路錯誤：' + e.message); return; }
   load(false);
-  renderKPIList(); renderAdmins(); renderManagers(); renderStaffDir(); updateNtPreview(); updateExPreview();
+  renderKPIList(); renderAdmins(); renderManagers(); renderStaffDir(); updateNtPreview(); updateExPreview(); renderScoringToggle();
 }
 async function reloadAdmin() { await initAdmin(); toast('資料已重新載入'); }
 function renderQuarterSetting(d) {
@@ -862,6 +871,22 @@ function renderOverview(o) {
       </div>
     </div>`;
   }).join('') || '<p style="color:var(--LT);font-size:12px;padding:.5rem">尚無資料</p>';
+}
+function renderScoringToggle() {
+  const btn = document.getElementById('scoring-toggle-btn');
+  if (!btn) return;
+  btn.textContent = MANAGER_SCORING_ENABLED ? '目前：開啟（點擊關閉）' : '目前：關閉（點擊開啟）';
+  btn.classList.toggle('btn-r', MANAGER_SCORING_ENABLED);
+}
+async function toggleManagerScoring() {
+  const next = !MANAGER_SCORING_ENABLED;
+  load(true, '更新中...');
+  const res = await POST({ action: 'saveSystemSettings', managerScoringEnabled: next, by: CU.id });
+  load(false);
+  if (!res.ok) { toast('錯誤：' + res.err); return; }
+  MANAGER_SCORING_ENABLED = res.data.managerScoringEnabled;
+  renderScoringToggle();
+  toast(MANAGER_SCORING_ENABLED ? '主管評分功能已開啟' : '主管評分功能已關閉');
 }
 
 // ── KPI清單 ──
